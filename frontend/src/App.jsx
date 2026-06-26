@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignupFlow from "./components/SignupFlow";
 import DonorPanel from "./components/DonorPanel";
+import CreatorPanel from "./components/CreatorPanel";
 
 function App() {
   return (
@@ -15,6 +16,9 @@ function App() {
 
         {/* Render the donor panel dashboard */}
         <Route path="/donor-panel" element={<DonorPanel />} />
+
+        {/* Render the creator panel dashboard */}
+        <Route path="/creator-panel" element={<CreatorPanel />} />
         
         {/* Fallback to root */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -23,4 +27,4 @@ function App() {
   );
 }
 
-export default App;
+export default App;

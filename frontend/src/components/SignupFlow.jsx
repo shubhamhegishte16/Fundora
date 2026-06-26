@@ -216,10 +216,51 @@ const SignupFlow = () => {
     }
   };
 
-  const handleCreatorSubmit = () => {
+  const handleCreatorSubmit = async () => {
     if (validateStep4Final()) {
-      console.log("Creator Registration Submitted (Awaiting Verification):", formData);
-      setIsSubmitted(true);
+      setIsLoading(true);
+      setSubmitError(null);
+      try {
+        // Build multipart form data to support KYC file upload
+        const data = new FormData();
+        data.append("name", formData.fullName);
+        data.append("email", formData.email);
+        data.append("password", formData.creatorPassword);
+        data.append("idType", formData.creatorIdType);
+        data.append("idNumber", formData.creatorIdNumber);
+        data.append("address", formData.creatorAddress);
+        data.append("foundationName", formData.creatorFoundationName);
+        data.append("phone", formData.creatorPhone);
+        if (formData.creatorIdFile) {
+          data.append("idFile", formData.creatorIdFile);
+        }
+
+        const response = await axios.post(
+          "http://localhost:5000/api/creator/auth/register",
+          data,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+
+        if (response.data.success) {
+          localStorage.setItem("creatorToken", response.data.token);
+          localStorage.setItem("creator", JSON.stringify(response.data.creator));
+          console.log("Creator Registration Successful:", response.data);
+          setIsSubmitted(true);
+
+          // Redirect to creator panel after 2 seconds
+          setTimeout(() => {
+            navigate("/creator-panel");
+          }, 2000);
+        } else {
+          setSubmitError(response.data.message || "Registration failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("Creator registration error:", err);
+        const errMsg = err.response?.data?.message || "Server error. Please ensure the backend is running.";
+        setSubmitError(errMsg);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -307,6 +348,8 @@ const SignupFlow = () => {
                     errors={errors}
                     onBack={handleBack}
                     onSubmit={handleCreatorSubmit}
+                    isLoading={isLoading}
+                    submitError={submitError}
                   />
                 )}
               </motion.div>
@@ -353,18 +396,10 @@ const SignupFlow = () => {
                       Redirecting to Donor Panel...
                     </div>
                   ) : (
-                    <>
-                      <div className="flex items-center gap-2 text-xs bg-bg-light px-4 py-2.5 rounded-lg border border-brand-border text-brand-secondary justify-center font-medium">
-                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                        Verification request submitted
-                      </div>
-                      <button
-                        onClick={handleReset}
-                        className="w-full py-3 rounded-full bg-dark-green text-white font-bold text-sm hover:bg-primary-green transition-all shadow-md shadow-dark-green/10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-light-green"
-                      >
-                        Back to Sign Up
-                      </button>
-                    </>
+                    <div className="flex items-center gap-2 text-xs bg-[#EFF6FF] px-4 py-2.5 rounded-lg border border-blue-200 text-blue-700 justify-center font-medium shadow-sm">
+                      <div className="animate-spin h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent rounded-full mr-1.5 shrink-0" />
+                      Redirecting to Creator Panel...
+                    </div>
                   )}
                 </div>
               </motion.div>

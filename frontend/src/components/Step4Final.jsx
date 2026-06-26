@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ArrowLeft, User, Phone, Mail, Lock, Eye, EyeOff, Send } from "lucide-react";
 
-const Step4Final = ({ formData, setFormData, errors, onBack, onSubmit }) => {
+const Step4Final = ({ formData, setFormData, errors, onBack, onSubmit, isLoading, submitError }) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
@@ -130,22 +130,40 @@ const Step4Final = ({ formData, setFormData, errors, onBack, onSubmit }) => {
         </div>
       </div>
 
+      {/* Submit Error */}
+      {submitError && (
+        <div className="mx-8 lg:mx-12 mb-2 px-4 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium text-center">
+          {submitError}
+        </div>
+      )}
+
       {/* Buttons */}
-      <div className="flex justify-between items-center mt-6 border-t border-brand-border/40 pt-4">
+      <div className="flex justify-between items-center mt-6 border-t border-brand-border/40 pt-4 px-8 lg:px-12 pb-8 lg:pb-12">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-1 px-4 py-2 rounded-full border border-brand-border text-brand-secondary font-bold text-sm hover:text-brand-text hover:bg-bg-light transition-all cursor-pointer focus:outline-none"
+          disabled={isLoading}
+          className="flex items-center gap-1 px-4 py-2 rounded-full border border-brand-border text-brand-secondary font-bold text-sm hover:text-brand-text hover:bg-bg-light transition-all cursor-pointer focus:outline-none disabled:opacity-50"
         >
           <ArrowLeft size={16} />
           Back
         </button>
         <button
           type="submit"
-          className="flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-[#22C55E] text-white font-bold text-sm hover:bg-[#16a34a] transition-all shadow-md shadow-green-500/20 hover:shadow-green-600/25 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#86efac]"
+          disabled={isLoading}
+          className="flex items-center gap-1.5 px-6 py-2.5 rounded-full bg-[#22C55E] text-white font-bold text-sm hover:bg-[#16a34a] transition-all shadow-md shadow-green-500/20 hover:shadow-green-600/25 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#86efac] disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          Send for verification
-          <Send size={14} />
+          {isLoading ? (
+            <>
+              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+              Registering...
+            </>
+          ) : (
+            <>
+              Send for verification
+              <Send size={14} />
+            </>
+          )}
         </button>
       </div>
     </form>
