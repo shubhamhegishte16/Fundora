@@ -1,0 +1,30 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Build files
+dist/
+build/
+
+# Database files
+*.db
+*.sqlite
+
+# Uploads
+uploads/
+
+Package lock (optional - include if you want to commit it)
+package-lock.json
