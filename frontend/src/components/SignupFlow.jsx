@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import WelcomePanel from "./WelcomePanel";
 import Step1Base from "./Step1Base";
 import Step2Donor from "./Step2Donor";
@@ -34,6 +36,9 @@ const slideVariants = {
 const SignupFlow = () => {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1); // 1 for forward, -1 for backward
+  const [isLoading, setIsLoading] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -176,10 +181,38 @@ const SignupFlow = () => {
     setErrors({});
   };
 
-  const handleDonorSubmit = () => {
+  const handleDonorSubmit = async () => {
     if (validateStep2Donor()) {
-      console.log("Donor Registration Submitted:", formData);
-      setIsSubmitted(true);
+      setIsLoading(true);
+      setSubmitError(null);
+      try {
+        const response = await axios.post("http://localhost:5000/api/auth/register", {
+          name: formData.fullName,
+          email: formData.email,
+          password: formData.donorPassword,
+          role: "donor"
+        });
+
+        if (response.data.success) {
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          console.log("Donor Registration Successful:", response.data);
+          setIsSubmitted(true);
+          
+          // Automatically redirect to /donor-panel after 2 seconds
+          setTimeout(() => {
+            navigate("/donor-panel");
+          }, 2000);
+        } else {
+          setSubmitError(response.data.message || "Registration failed. Please try again.");
+        }
+      } catch (err) {
+        console.error("Donor registration error:", err);
+        const errMsg = err.response?.data?.message || "Server error. Please ensure the backend is running.";
+        setSubmitError(errMsg);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -247,13 +280,15 @@ const SignupFlow = () => {
                     onNext={handleStep1Next}
                   />
                 )}
-                {step === 2 && (
+                 {step === 2 && (
                   <Step2Donor
                     formData={formData}
                     setFormData={setFormData}
                     errors={errors}
                     onBack={handleBack}
                     onSubmit={handleDonorSubmit}
+                    isLoading={isLoading}
+                    submitError={submitError}
                   />
                 )}
                 {step === 3 && (
@@ -276,7 +311,6 @@ const SignupFlow = () => {
                 )}
               </motion.div>
             ) : (
-              // Success / Thank You screen
               <motion.div
                 key="success"
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -294,8 +328,7 @@ const SignupFlow = () => {
                     </h2>
                     <p className="text-sm text-brand-secondary max-w-md mb-6 leading-relaxed">
                       Thank you for joining <strong>Ariseo</strong>, <span className="font-semibold text-brand-text">{formData.fullName}</span>. 
-                      Your donor account is active under the username <strong className="text-dark-green">{formData.donorUsername}</strong>.
-                      Get ready to discover and support revolutionary campaigns!
+                      Your donor account is active. Get ready to discover and support revolutionary campaigns!
                     </p>
                   </>
                 ) : (
@@ -313,17 +346,26 @@ const SignupFlow = () => {
                   </>
                 )}
                 
-                <div className="flex flex-col gap-3 w-full max-w-xs mt-4">
-                  <div className="flex items-center gap-2 text-xs bg-bg-light px-4 py-2.5 rounded-lg border border-brand-border text-brand-secondary justify-center font-medium">
-                    <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                    Confirmation email sent to {formData.email}
-                  </div>
-                  <button
-                    onClick={handleReset}
-                    className="w-full py-3 rounded-full bg-dark-green text-white font-bold text-sm hover:bg-primary-green transition-all shadow-md shadow-dark-green/10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-light-green"
-                  >
-                    Back to Sign Up
-                  </button>
+                 <div className="flex flex-col gap-3 w-full max-w-xs mt-4">
+                  {formData.role === "Donor" ? (
+                    <div className="flex items-center gap-2 text-xs bg-[#F0FDF4] px-4 py-2.5 rounded-lg border border-emerald-200 text-emerald-700 justify-center font-medium shadow-sm">
+                      <div className="animate-spin h-3.5 w-3.5 border-2 border-emerald-500 border-t-transparent rounded-full mr-1.5 shrink-0" />
+                      Redirecting to Donor Panel...
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-xs bg-bg-light px-4 py-2.5 rounded-lg border border-brand-border text-brand-secondary justify-center font-medium">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        Verification request submitted
+                      </div>
+                      <button
+                        onClick={handleReset}
+                        className="w-full py-3 rounded-full bg-dark-green text-white font-bold text-sm hover:bg-primary-green transition-all shadow-md shadow-dark-green/10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-light-green"
+                      >
+                        Back to Sign Up
+                      </button>
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}

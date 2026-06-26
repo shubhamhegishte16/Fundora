@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignupFlow from "./components/SignupFlow";
+import DonorPanel from "./components/DonorPanel";
 
 function App() {
   return (
@@ -11,6 +12,9 @@ function App() {
         
         {/* Render the signup flow only at /signup */}
         <Route path="/signup" element={<SignupFlow />} />
+
+        {/* Render the donor panel dashboard */}
+        <Route path="/donor-panel" element={<DonorPanel />} />
         
         {/* Fallback to root */}
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -19,5 +23,4 @@ function App() {
   );
 }
 
-
-export default App;
+export default App;
