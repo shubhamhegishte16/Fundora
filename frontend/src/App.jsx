@@ -4,6 +4,7 @@ import SignupFlow from "./components/SignupFlow";
 import LoginFlow from "./components/LoginFlow";
 import DonorPanel from "./components/DonorPanel";
 import CreatorPanel from "./components/CreatorPanel";
+import DonorProfile from "./components/DonorProfile";
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
 
         {/* Render the donor panel dashboard */}
         <Route path="/donor-panel" element={<DonorPanel />} />
+
+        <Route path="/donor-profile" element={<DonorProfile/>}/>
 
         {/* Render the creator panel dashboard */}
         <Route path="/creator-panel" element={<CreatorPanel />} />
