@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignupFlow from "./components/SignupFlow";
+import LoginFlow from "./components/LoginFlow";
 import DonorPanel from "./components/DonorPanel";
 import CreatorPanel from "./components/CreatorPanel";
 
@@ -13,6 +14,9 @@ function App() {
         
         {/* Render the signup flow only at /signup */}
         <Route path="/signup" element={<SignupFlow />} />
+
+        {/* Render the login flow only at /login */}
+        <Route path="/login" element={<LoginFlow />} />
 
         {/* Render the donor panel dashboard */}
         <Route path="/donor-panel" element={<DonorPanel />} />

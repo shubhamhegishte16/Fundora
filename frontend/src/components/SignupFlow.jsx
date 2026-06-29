@@ -289,7 +289,7 @@ const SignupFlow = () => {
   };
 
   const handleSignInToast = () => {
-    alert("Sign In functionality will be available soon. Please complete the registration!");
+    navigate("/login");
   };
 
   return (
