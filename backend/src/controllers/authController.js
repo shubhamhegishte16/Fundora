@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Creator from '../models/Creator.js';
 import { generateToken } from '../utils/jwt.js';
 
 export const register = async (req, res) => {
@@ -55,36 +56,68 @@ export const login = async (req, res) => {
       });
     }
 
-    // Check for user
+    // 1. Check for creator first
+    const creator = await Creator.findOne({ email }).select('+password');
+    if (creator) {
+      // Check password
+      const isMatch = await creator.comparePassword(password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+      }
+
+      // Generate token
+      const token = generateToken(creator._id);
+
+      return res.status(200).json({
+        success: true,
+        token,
+        role: 'creator',
+        creator: {
+          id: creator._id,
+          name: creator.name,
+          email: creator.email,
+          role: creator.role,
+          foundationName: creator.foundationName,
+          isVerified: creator.isVerified,
+        },
+      });
+    }
+
+    // 2. Check for user (donor/admin)
     const user = await User.findOne({ email }).select('+password');
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
+    if (user) {
+      // Check password
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials',
+        });
+      }
+
+      // Generate token
+      const token = generateToken(user._id);
+
+      return res.status(200).json({
+        success: true,
+        token,
+        role: user.role || 'donor',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
       });
     }
 
-    // Check password
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-      });
-    }
-
-    // Generate token
-    const token = generateToken(user._id);
-
-    res.status(200).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+    // 3. Email not found in either database
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid credentials',
     });
   } catch (error) {
     console.error('Login error:', error);

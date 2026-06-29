@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import { LogIn, Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 const LoginFlow = () => {
@@ -10,7 +11,7 @@ const LoginFlow = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     if (!email || !password) return setError("Please fill in all fields.");
     if (password.length < 6) return setError("Password must be at least 6 characters.");
@@ -18,19 +19,32 @@ const LoginFlow = () => {
     setIsLoading(true);
     setError("");
 
-    setTimeout(() => {
-      setIsLoading(false);
-      const isCreator = email.toLowerCase().includes("creator");
-      if (isCreator) {
-        localStorage.setItem("creatorToken", "mock-creator-token");
-        localStorage.setItem("creator", JSON.stringify({ name: "Mock Creator", email }));
-        navigate("/creator-panel");
+    try {
+      const response = await axios.post("http://localhost:5000/api/auth/login", {
+        email,
+        password,
+      });
+
+      if (response.data.success) {
+        if (response.data.role === "creator") {
+          localStorage.setItem("creatorToken", response.data.token);
+          localStorage.setItem("creator", JSON.stringify(response.data.creator));
+          navigate("/creator-panel");
+        } else {
+          localStorage.setItem("token", response.data.token);
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+          navigate("/donor-panel");
+        }
       } else {
-        localStorage.setItem("token", "mock-donor-token");
-        localStorage.setItem("user", JSON.stringify({ name: "Mock Donor", email }));
-        navigate("/donor-panel");
+        setError(response.data.message || "Invalid credentials.");
       }
-    }, 1000);
+    } catch (err) {
+      console.error("Login error:", err);
+      const errMsg = err.response?.data?.message || "Server error. Please ensure the backend is running.";
+      setError(errMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
