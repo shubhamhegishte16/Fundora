@@ -9,8 +9,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Render a blank page at the root since the landing page will be built later */}
-        <Route path="/" element={<div className="min-h-screen bg-bg-light" />} />
+        {/* Render the donor panel dashboard at root for direct access */}
+        <Route path="/" element={<DonorPanel />} />
         
         {/* Render the signup flow only at /signup */}
         <Route path="/signup" element={<SignupFlow />} />
