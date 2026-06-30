@@ -6,12 +6,15 @@ import DonorPanel from "./components/DonorPanel";
 import CreatorPanel from "./components/CreatorPanel";
 import DonorProfile from "./components/DonorProfile";
 
+// Blank Landing Page for now
+const LandingPage = () => <div className="min-h-screen bg-bg-light" />;
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Render the donor panel dashboard at root for direct access */}
-        <Route path="/" element={<DonorPanel />} />
+        {/* Render the landing page at root */}
+        <Route path="/" element={<LandingPage />} />
         
         {/* Render the signup flow only at /signup */}
         <Route path="/signup" element={<SignupFlow />} />
@@ -20,9 +23,14 @@ function App() {
         <Route path="/login" element={<LoginFlow />} />
 
         {/* Render the donor panel dashboard */}
-        <Route path="/donor-panel" element={<DonorPanel />} />
+        <Route path="/donordashboard" element={<DonorPanel />} />
 
-        <Route path="/donor-profile" element={<DonorProfile/>}/>
+        {/* Render the donor profile */}
+        <Route path="/donorprofile" element={<DonorProfile />} />
+
+        {/* Redirect old hyphenated routes to the new paths */}
+        <Route path="/donor-panel" element={<Navigate to="/donordashboard" replace />} />
+        <Route path="/donor-profile" element={<Navigate to="/donorprofile" replace />} />
 
         {/* Render the creator panel dashboard */}
         <Route path="/creator-panel" element={<CreatorPanel />} />

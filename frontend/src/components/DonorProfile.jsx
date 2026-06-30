@@ -21,7 +21,7 @@ import Sidebar from "./Sidebar";
 
 // --- Main Donor Profile Page ---
 const DonorProfile = () => {
-    const [activeTab, setActiveTab] = useState("Dashboard");
+    const [activeTab, setActiveTab] = useState("Profile Settings");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
     const donorDetails = [

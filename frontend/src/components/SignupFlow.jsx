@@ -199,9 +199,9 @@ const SignupFlow = () => {
           console.log("Donor Registration Successful:", response.data);
           setIsSubmitted(true);
           
-          // Automatically redirect to /donor-panel after 2 seconds
+          // Automatically redirect to /donordashboard after 2 seconds
           setTimeout(() => {
-            navigate("/donor-panel");
+            navigate("/donordashboard");
           }, 2000);
         } else {
           setSubmitError(response.data.message || "Registration failed. Please try again.");

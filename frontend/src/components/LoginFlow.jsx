@@ -33,7 +33,7 @@ const LoginFlow = () => {
         } else {
           localStorage.setItem("token", response.data.token);
           localStorage.setItem("user", JSON.stringify(response.data.user));
-          navigate("/donor-panel");
+          navigate("/donordashboard");
         }
       } else {
         setError(response.data.message || "Invalid credentials.");

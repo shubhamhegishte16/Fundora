@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Search, 
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) => {
+  const navigate = useNavigate();
+
   const menuItems = [
     { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "Explore Campaigns", label: "Explore Campaigns", icon: Search },
@@ -69,7 +72,12 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
               <button
                 key={item.id}
                 onClick={() => {
-                  if (setActiveTab) setActiveTab(item.id);
+                  if (item.id === "Profile Settings") {
+                    navigate("/donorprofile");
+                  } else {
+                    navigate("/donordashboard");
+                    if (setActiveTab) setActiveTab(item.id);
+                  }
                   setIsOpen(false);
                 }}
                 className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all cursor-pointer ${
