@@ -79,7 +79,7 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
                     navigate("/donorreward");
                   }
                   else {
-                    navigate("/donordashboard");
+                    navigate(`/donordashboard?tab=${encodeURIComponent(item.id)}`);
                     if (setActiveTab) setActiveTab(item.id);
                   }
                   setIsOpen(false);

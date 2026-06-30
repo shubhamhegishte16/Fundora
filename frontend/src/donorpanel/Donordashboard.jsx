@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ExploreCampaigns from "./ExploreCampaigns";
 import { Bell, Menu, TrendingUp, Users, Award, Leaf, Heart, ChevronRight } from "lucide-react";
 
 const DonorPanel = () => {
-  const [activeTab, setActiveTab] = useState("Dashboard");
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") || "Dashboard";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Sync activeTab when URL query param changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   // Load user data dynamically from localStorage, fallback to Arjun Sharma
   const [user] = useState(() => {

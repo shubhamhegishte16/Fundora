@@ -3,6 +3,30 @@ import { LayoutGrid, Heart, MapPin, Clock, Calendar, ChevronDown, ChevronLeft, C
 
 const ExploreCampaigns = () => {
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [filters, setFilters] = useState({
+    category: "All Categories",
+    goal: "Goal Amount",
+    location: "Location",
+    sort: "Most Popular",
+    timing: "Ending Soon"
+  });
+
+  const options = {
+    category: ["All Categories", "Education", "Environment", "Health & Medical", "Animal Welfare", "Disaster Relief"],
+    goal: ["Goal Amount", "Under ₹5 Lakh", "₹5 Lakh - ₹10 Lakh", "Over ₹10 Lakh"],
+    location: ["Location", "Mumbai", "Delhi", "Bangalore", "Pune", "Rural India"],
+    sort: ["Most Popular", "Trending", "Newest First", "Highest Funded"],
+    timing: ["Ending Soon", "Ending Today", "Ending this Week", "Ending this Month"]
+  };
+
+  const filterKeys = [
+    { key: "category", icon: LayoutGrid, fill: false },
+    { key: "goal", icon: Heart, fill: true },
+    { key: "location", icon: MapPin, fill: false },
+    { key: "sort", icon: Clock, fill: false },
+    { key: "timing", icon: Calendar, fill: false }
+  ];
 
   // Sample Campaign data from Figma mockup
   const campaigns = [
@@ -22,13 +46,19 @@ const ExploreCampaigns = () => {
         <p className="text-sm text-brand-secondary font-medium mt-1">Discover meaningful campaigns and support causes that create real impact.</p>
       </div>
 
-      {/* Filters Row */}
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
-        <button className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs shrink-0 active:scale-[0.98]"><LayoutGrid size={16} className="text-primary-green" /><span>All Categories</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
-        <button className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs shrink-0 active:scale-[0.98]"><Heart size={16} className="text-primary-green fill-primary-green" /><span>Goal Amount</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
-        <button className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs shrink-0 active:scale-[0.98]"><MapPin size={16} className="text-primary-green" /><span>Location</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
-        <button className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs shrink-0 active:scale-[0.98]"><Clock size={16} className="text-primary-green" /><span>Most Popular</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
-        <button className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs shrink-0 active:scale-[0.98]"><Calendar size={16} className="text-primary-green" /><span>Ending Soon</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
+      <div className="flex flex-wrap gap-3">
+        {filterKeys.map(({ key, icon: Icon, fill }) => (
+          <div key={key} className="relative shrink-0">
+            <button onClick={() => setActiveDropdown(activeDropdown === key ? null : key)} className="flex items-center gap-2 bg-white border border-brand-border/60 hover:border-brand-border rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-brand-text whitespace-nowrap cursor-pointer transition-all shadow-xs active:scale-[0.98]"><Icon size={16} className={`text-primary-green ${fill ? "fill-primary-green" : ""}`} /><span>{filters[key]}</span><ChevronDown size={14} className="text-brand-secondary ml-1" /></button>
+            {activeDropdown === key && (
+              <div className="absolute left-0 mt-2 w-48 bg-white border border-brand-border/60 rounded-2xl shadow-lg py-2 z-50 animate-fadeIn">
+                {options[key].map((opt) => (
+                  <button key={opt} onClick={() => { setFilters(prev => ({ ...prev, [key]: opt })); setActiveDropdown(null); }} className={`w-full text-left px-4 py-2 text-xs sm:text-sm font-semibold hover:bg-slate-50 transition-colors ${filters[key] === opt ? "text-[#059669] bg-emerald-50/30" : "text-brand-text"}`}>{opt}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Campaigns Grid */}
