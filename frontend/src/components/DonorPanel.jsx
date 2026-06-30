@@ -115,7 +115,7 @@ const DonorPanel = () => {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* Top Header */}
-        <header className="sticky top-0 z-20 bg-white border-b border-brand-border/60 px-6 py-4 flex items-center justify-between shadow-xs">
+        <header className="sticky top-0 z-20 bg-white border-b border-brand-border/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -124,7 +124,7 @@ const DonorPanel = () => {
               <Menu size={24} />
             </button>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-brand-text flex items-center gap-2">
+              <h2 className="text-lg sm:text-2xl font-black text-brand-text flex items-center gap-2">
                 Welcome back, {user.name.split(" ")[0]}! <span className="animate-wiggle">👋</span>
               </h2>
               <p className="text-xs sm:text-sm text-brand-secondary font-medium mt-0.5">Thank you for being a part of change.</p>
@@ -143,7 +143,7 @@ const DonorPanel = () => {
               <img 
                 src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" 
                 alt={user.name} 
-                className="w-10 h-10 rounded-full border border-brand-border/60 object-cover shadow-sm"
+                className="w-10 h-10 shrink-0 rounded-full border border-brand-border/60 object-cover shadow-sm"
               />
               <div className="hidden sm:block leading-none">
                 <h4 className="text-sm font-bold text-brand-text">{user.name}</h4>
@@ -154,55 +154,55 @@ const DonorPanel = () => {
         </header>
 
         {/* Dashboard Grid Container */}
-        <main className="flex-1 p-6 md:p-8 max-w-[1400px] w-full mx-auto space-y-8 overflow-y-auto">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 max-w-[1400px] w-full mx-auto space-y-6 sm:space-y-8 overflow-y-auto">
           
           {/* Stats Section Row */}
-          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             
             {/* Stat Card 1: Total Donated */}
-            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-5 flex items-center gap-4.5 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
+            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5 shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
                 <TrendingUp size={24} />
               </div>
               <div className="leading-tight">
                 <p className="text-xs text-brand-secondary font-bold uppercase tracking-wider">Total Donated</p>
-                <h3 className="text-2xl font-black text-brand-text mt-1">₹25,000</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-brand-text mt-1">₹25,000</h3>
                 <p className="text-[11px] text-[#059669] font-semibold mt-1">Across 12 campaigns</p>
               </div>
             </div>
 
             {/* Stat Card 2: Campaigns Supported */}
-            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-5 flex items-center gap-4.5 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
+            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5 shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
                 <Users size={24} />
               </div>
               <div className="leading-tight">
                 <p className="text-xs text-brand-secondary font-bold uppercase tracking-wider">Campaigns Supported</p>
-                <h3 className="text-2xl font-black text-brand-text mt-1">12</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-brand-text mt-1">12</h3>
                 <p className="text-[11px] text-brand-secondary font-semibold mt-1">You've supported</p>
               </div>
             </div>
 
             {/* Stat Card 3: Rewards Earned */}
-            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-5 flex items-center gap-4.5 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
+            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5 shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
                 <Award size={24} />
               </div>
               <div className="leading-tight">
                 <p className="text-xs text-brand-secondary font-bold uppercase tracking-wider">Rewards Earned</p>
-                <h3 className="text-2xl font-black text-brand-text mt-1">5</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-brand-text mt-1">5</h3>
                 <p className="text-[11px] text-brand-secondary font-semibold mt-1">Badges unlocked</p>
               </div>
             </div>
 
             {/* Stat Card 4: Impact Score */}
-            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-5 flex items-center gap-4.5 shadow-sm">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
+            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-3.5 sm:p-5 flex items-center gap-3 sm:gap-4.5 shadow-sm">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-50 text-[#10B981] flex items-center justify-center shrink-0">
                 <Leaf size={24} />
               </div>
               <div className="leading-tight">
                 <p className="text-xs text-brand-secondary font-bold uppercase tracking-wider">Impact Score</p>
-                <h3 className="text-2xl font-black text-brand-text mt-1">850</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-brand-text mt-1">850</h3>
                 <p className="text-[11px] text-[#059669] font-semibold mt-1">Keep making impact!</p>
               </div>
             </div>
@@ -210,10 +210,10 @@ const DonorPanel = () => {
           </section>
 
           {/* Lower Two-Column Section */}
-          <section className="grid grid-cols-1 xl:grid-cols-5 gap-8 items-start">
+          <section className="grid grid-cols-1 lg:grid-cols-5 gap-6 sm:gap-8 items-start">
             
             {/* Left Column: Recent Donations Card */}
-            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-6 shadow-sm xl:col-span-3 flex flex-col">
+            <div className="bg-card-white border border-brand-border/60 rounded-2xl p-4 sm:p-6 shadow-sm lg:col-span-3 flex flex-col">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-black text-brand-text">Recent Donations</h3>
                 <a href="#all-donations" className="text-xs font-bold text-[#10B981] hover:text-[#059669] flex items-center gap-0.5 transition-colors">
@@ -227,13 +227,13 @@ const DonorPanel = () => {
                 {recentDonations.map((donation) => (
                   <div 
                     key={donation.id}
-                    className="flex items-center justify-between p-3 border border-brand-border/40 hover:border-brand-border rounded-xl transition-all hover:bg-slate-50/50"
+                    className="flex items-center justify-between p-2.5 sm:p-3 border border-brand-border/40 hover:border-brand-border rounded-xl transition-all hover:bg-slate-50/50"
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
                       <img 
                         src={donation.image} 
                         alt={donation.title} 
-                        className="w-12 h-12 rounded-lg object-cover border border-brand-border/30 shadow-xs"
+                        className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-brand-border/30 shadow-xs"
                       />
                       <div className="leading-tight min-w-0">
                         <h4 className="text-sm font-bold text-brand-text truncate">{donation.title}</h4>
@@ -265,10 +265,10 @@ const DonorPanel = () => {
             </div>
 
             {/* Right Column: Donation Overview & Recommendations */}
-            <div className="xl:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-6 sm:space-y-8">
               
               {/* Box 1: Donation Overview Donut Chart */}
-              <div className="bg-card-white border border-brand-border/60 rounded-2xl p-6 shadow-sm flex flex-col">
+              <div className="bg-card-white border border-brand-border/60 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-black text-brand-text">Donation Overview</h3>
                   <select className="bg-slate-50 border border-brand-border/60 text-xs font-semibold px-3 py-1.5 rounded-lg outline-none focus:border-[#10B981]">
@@ -280,7 +280,7 @@ const DonorPanel = () => {
 
                 {/* SVG Donut Chart container */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6 py-2">
-                  <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+                  <div className="relative w-28 h-28 sm:w-36 sm:h-36 flex items-center justify-center shrink-0">
                     <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                       {/* Segment 1: Education (40%) -> strokeDasharray="40 60" */}
                       <circle
@@ -371,7 +371,7 @@ const DonorPanel = () => {
               </div>
 
               {/* Box 2: Recommended For You Card */}
-              <div className="bg-card-white border border-brand-border/60 rounded-2xl p-6 shadow-sm flex flex-col">
+              <div className="bg-card-white border border-brand-border/60 rounded-2xl p-4 sm:p-6 shadow-sm flex flex-col">
                 <div className="flex items-center justify-between mb-5">
                   <h3 className="text-lg font-black text-brand-text">Recommended For You</h3>
                   <a href="#recommendations" className="text-xs font-bold text-[#10B981] hover:text-[#059669] flex items-center gap-0.5 transition-colors">
@@ -385,9 +385,9 @@ const DonorPanel = () => {
                   {recommendedCampaigns.map((camp) => (
                     <div 
                       key={camp.id}
-                      className="flex items-center gap-4 p-3 border border-brand-border/30 hover:border-brand-border rounded-xl transition-all"
+                      className="flex items-center gap-3 sm:gap-4 p-2.5 sm:p-3 border border-brand-border/30 hover:border-brand-border rounded-xl transition-all"
                     >
-                      <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden border border-brand-border/40">
+                      <div className="relative w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-lg overflow-hidden border border-brand-border/40">
                         <img 
                           src={camp.image} 
                           alt={camp.title} 
@@ -418,7 +418,7 @@ const DonorPanel = () => {
                         </div>
                       </div>
 
-                      <button className="px-3 py-2 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all whitespace-nowrap cursor-pointer">
+                      <button className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all whitespace-nowrap cursor-pointer">
                         Donate
                       </button>
                     </div>
