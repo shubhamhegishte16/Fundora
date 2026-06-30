@@ -3,10 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import SignupFlow from "./components/SignupFlow";
 import LoginFlow from "./components/LoginFlow";
-import DonorPanel from "./components/DonorPanel";
+import DonorPanel from "./donorpanel/Donordashboard";
 import CreatorPanelApp from "./Creatorpanel/CreatorPanelApp";
-import DonorProfile from "./components/DonorProfile";
-import DonorReward from "./components/DonorRewardSection";
+import DonorProfile from "./donorpanel/DonorProfile";
+import DonorReward from "./donorpanel/DonorRewardSection";
 
 import { AdminAuthProvider } from "./Adminpanel/context/AdminAuthContext";
 import ProtectedAdminRoute from "./Adminpanel/components/ProtectedAdminRoute";
@@ -55,7 +55,7 @@ function App() {
         />
 
         {/* Creator */}
-       <Route path="/creator-panel" element={<CreatorPanelApp />} />
+        <Route path="/creator-panel" element={<CreatorPanelApp />} />
 
         {/* Admin Login */}
         <Route

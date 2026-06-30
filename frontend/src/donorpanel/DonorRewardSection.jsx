@@ -6,7 +6,7 @@ const DonorReward = () => {
     const [activeTab, setActiveTab] = useState("Rewards & Badges");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const lifetimePoints = 2450; 
+    const lifetimePoints = 2450;
 
     const milestones = [
         { score: 100, unlocked: lifetimePoints >= 100 },
@@ -38,7 +38,7 @@ const DonorReward = () => {
 
     return (
         <div className="min-h-screen bg-[#F8F9FA] flex flex-col lg:flex-row font-sans antialiased">
-            
+
             {/* Mobile Nav Trigger Header */}
             <div className="lg:hidden w-full bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xs">
                 <span className="font-bold text-gray-900 text-lg">Elpis Panel</span>
@@ -53,16 +53,16 @@ const DonorReward = () => {
 
             {/* Right Work Environment Layer */}
             <div className="flex-1 flex flex-col min-w-0">
-                
+
                 {/* GLOBAL STICKY DASHBOARD HEADER FRAME WITH SHADOW */}
                 <header className="sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md border-b border-gray-100/80 px-4 md:px-8 py-5 flex items-center justify-between gap-4 shadow-xs">
                     <div>
                         <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                            Your Impact at Elpis 
+                            Your Impact at Elpis
                         </h1>
                         <p className="text-xs md:text-sm text-gray-500 mt-0.5">Track Donate Patterns, Donor behaviour & how it contributes to results</p>
                     </div>
-                    
+
                     {/* User Actions Account Node Block */}
                     <div className="flex items-center gap-4 shrink-0">
                         <button className="w-10 h-10 rounded-full border border-gray-100 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 relative transition-colors shadow-xs">
@@ -70,9 +70,9 @@ const DonorReward = () => {
                             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                         </button>
                         <div className="flex items-center gap-2.5 pl-1">
-                            <img 
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
-                                alt="User Avatar" 
+                            <img
+                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+                                alt="User Avatar"
                                 className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
                             />
                             <div className="hidden sm:block leading-none">
@@ -86,7 +86,7 @@ const DonorReward = () => {
                 {/* Main Scroll Content Area */}
                 <main className="p-4 md:p-8 pt-6 w-full max-w-(screen-2xl) mx-auto">
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-                        
+
                         <div className="flex justify-between items-end mb-4">
                             <h2 className="text-base font-bold text-gray-900">Your Rewards</h2>
                             <span className="text-sm font-bold text-gray-900">Points: <span className="text-[#00966B]">{lifetimePoints}</span></span>
