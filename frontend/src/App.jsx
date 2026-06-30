@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SignupFlow from "./components/SignupFlow";
 import LoginFlow from "./components/LoginFlow";
 import DonorPanel from "./components/DonorPanel";
-import CreatorPanel from "./components/CreatorPanel";
+import CreatorPanelApp from "./Creatorpanel/CreatorPanelApp";
 import DonorProfile from "./components/DonorProfile";
 import DonorReward from "./components/DonorRewardSection";
 
@@ -55,7 +55,7 @@ function App() {
         />
 
         {/* Creator */}
-        <Route path="/creator-panel" element={<CreatorPanel />} />
+       <Route path="/creator-panel" element={<CreatorPanelApp />} />
 
         {/* Admin Login */}
         <Route
