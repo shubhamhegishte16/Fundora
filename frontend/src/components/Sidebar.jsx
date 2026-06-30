@@ -74,7 +74,11 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
                 onClick={() => {
                   if (item.id === "Profile Settings") {
                     navigate("/donorprofile");
-                  } else {
+                  } 
+                  else if (item.id === "Rewards & Badges") {
+                    navigate("/donorreward");
+                  }
+                  else {
                     navigate("/donordashboard");
                     if (setActiveTab) setActiveTab(item.id);
                   }
