@@ -24,35 +24,39 @@ const DonorProfile = () => {
     const [activeTab, setActiveTab] = useState("Profile Settings");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const donorDetails = [
+    // State for editable data
+    const [donorDetails, setDonorDetails] = useState([
         { label: "First Name", value: "Arjun" },
         { label: "Last Name", value: "Sharma" },
         { label: "Address", value: "55 Road Wail" },
         { label: "City", value: "Mumbai" },
         { label: "State & zip", value: "Maharashtra, 400075" },
         { label: "Country", value: "India" },
-    ];
+    ]);
 
-    const personalDetails = [
+    const [personalDetails] = useState([
         { label: "Mobile", value: "99656788765" },
         { label: "Phone", value: "456789878" },
         { label: "DOB", value: "10/04/2008" },
         { label: "Gender", value: "Male" },
         { label: "Created", value: "June 21, 2026" },
         { label: "Account", value: "Donor" },
-    ];
+    ]);
 
-    const recurringDetails = [
+    const [recurringDetails, setRecurringDetails] = useState([
         { label: "Amount", value: "$540" },
         { label: "Frequency", value: "Monthly" },
         { label: "Created", value: "June 28, 2026" }
-    ];
+    ]);
 
-    const recurringDetails2 = [
+    const [recurringDetails2, setRecurringDetails2] = useState([
         { label: "Giving Fund", value: "General Fund" },
         { label: "Total", value: "$37,450" },
         { label: "Method", value: "UPI Card" }
-    ];
+    ]);
+
+    const [editingDonor, setEditingDonor] = useState(false);
+    const [editingRecurring, setEditingRecurring] = useState(false);
 
     const donationActivity = [
         { donation: "$540", duration: "Yesterday" },
@@ -67,10 +71,30 @@ const DonorProfile = () => {
         { label: "My Rewards" }
     ];
 
+    // Handle donor detail change
+    const handleDonorChange = (index, value) => {
+        const updated = [...donorDetails];
+        updated[index].value = value;
+        setDonorDetails(updated);
+    };
+
+    // Handle recurring detail change
+    const handleRecurringChange = (index, value, isFirstSet) => {
+        if (isFirstSet) {
+            const updated = [...recurringDetails];
+            updated[index].value = value;
+            setRecurringDetails(updated);
+        } else {
+            const updated = [...recurringDetails2];
+            updated[index].value = value;
+            setRecurringDetails2(updated);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row font-sans antialiased">
 
-            {/* Mobile Header - MOVED OUTSIDE */}
+            {/* Mobile Header */}
             <div className="lg:hidden w-full bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xs">
                 <span className="font-bold text-gray-900 text-lg">Elpis Panel</span>
                 <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-gray-50 border border-gray-100 rounded-xl">
@@ -96,7 +120,7 @@ const DonorProfile = () => {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Header - Only show on desktop */}
+                {/* Header - Updated */}
                 <header className="hidden lg:flex sticky top-0 z-30 bg-[#F8F9FA] border-b border-gray-100/80 px-4 md:px-8 py-5 items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="min-w-0 flex-1">
@@ -105,32 +129,15 @@ const DonorProfile = () => {
                                 <Dot size={20} className="text-gray-400 flex-shrink-0" />
                                 <span className="text-gray-500 font-medium text-lg md:text-xl flex-shrink-0">Donor</span>
                             </h1>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <div className="flex sm:h-5 sm:w-5 items-center justify-center rounded-full bg-[#6DD89B] flex-shrink-0">
-                                    <Check size={10} className="text-white sm:hidden" />
-                                    <Check size={10} className="text-white hidden sm:block" />
-                                </div>
-                                <span className="text-xs sm:text-sm text-gray-600 truncate">Profile Verified</span>
-                            </div>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-                        <button className="w-10 h-10 rounded-full border border-gray-100 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 relative transition-colors shadow-xs flex-shrink-0">
-                            <Bell size={18} />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                        </button>
-                        <div className="flex items-center gap-2.5 pl-1">
-                            <img
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs flex-shrink-0"
-                            />
-                            <div className="hidden sm:block leading-none">
-                                <span className="block font-bold text-xs text-gray-900">Arjun Sharma</span>
-                                <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Donor</span>
-                            </div>
+                    {/* Profile Verified - Moved to right */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#6DD89B] flex-shrink-0">
+                            <Check size={12} className="text-white" />
                         </div>
+                        <span className="text-sm text-gray-600">Profile Verified</span>
                     </div>
                 </header>
 
@@ -168,17 +175,29 @@ const DonorProfile = () => {
                                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"><CircleUser className="w-10 h-10 md:w-12 md:h-12" /></span>
                                         <h2 className="truncate">Donor Details</h2>
                                     </div>
-                                    <button className="text-[#00a86b] hover:text-[#00965e] flex-shrink-0">
-                                        <SquarePen size={20} />
+                                    <button
+                                        onClick={() => setEditingDonor(!editingDonor)}
+                                        className="text-[#00a86b] hover:text-[#00965e] flex-shrink-0"
+                                    >
+                                        {editingDonor ? <Check size={20} /> : <SquarePen size={20} />}
                                     </button>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2 p-2.5">
                                     <div className="space-y-4 m-3 p-2">
-                                        {donorDetails.map((item) => (
+                                        {donorDetails.map((item, index) => (
                                             <div key={item.label} className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] items-center text-sm md:text-base leading-[32px] gap-2">
                                                 <span className="text-gray-400 font-medium truncate">{item.label}:</span>
-                                                <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                {editingDonor ? (
+                                                    <input
+                                                        type="text"
+                                                        value={item.value}
+                                                        onChange={(e) => handleDonorChange(index, e.target.value)}
+                                                        className="text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -186,7 +205,16 @@ const DonorProfile = () => {
                                         {personalDetails.map((item) => (
                                             <div key={item.label} className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] items-center text-sm md:text-base leading-[32px] gap-2">
                                                 <span className="text-gray-400 font-medium truncate">{item.label}:</span>
-                                                <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                {editingDonor ? (
+                                                    <input
+                                                        type="text"
+                                                        value={item.value}
+                                                        onChange={(e) => handleDonorChange(index, e.target.value)}
+                                                        className="text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -200,25 +228,46 @@ const DonorProfile = () => {
                                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"><RefreshCw size={20} /></span>
                                         <h2 className="truncate">Recurring Details</h2>
                                     </div>
-                                    <button className="text-[#00a86b] hover:text-[#00965e] flex-shrink-0">
-                                        <SquarePen size={20} />
+                                    <button
+                                        onClick={() => setEditingRecurring(!editingRecurring)}
+                                        className="text-[#00a86b] hover:text-[#00965e] flex-shrink-0"
+                                    >
+                                        {editingRecurring ? <Check size={20} /> : <SquarePen size={20} />}
                                     </button>
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     <div className="space-y-5 m-3 p-2">
-                                        {recurringDetails.map((item) => (
+                                        {recurringDetails.map((item, index) => (
                                             <div key={item.label} className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] items-center text-sm md:text-base leading-[32px] gap-2">
                                                 <span className="text-gray-400 font-medium truncate">{item.label}:</span>
-                                                <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                {editingRecurring ? (
+                                                    <input
+                                                        type="text"
+                                                        value={item.value}
+                                                        onChange={(e) => handleRecurringChange(index, e.target.value, true)}
+                                                        className="text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
                                     <div className="space-y-4 m-3 p-2">
-                                        {recurringDetails2.map((item) => (
+                                        {recurringDetails2.map((item, index) => (
                                             <div key={item.label} className="grid grid-cols-[100px_1fr] sm:grid-cols-[120px_1fr] items-center text-sm md:text-base leading-[32px] gap-2">
                                                 <span className="text-gray-400 font-medium truncate">{item.label}:</span>
-                                                <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                {editingRecurring ? (
+                                                    <input
+                                                        type="text"
+                                                        value={item.value}
+                                                        onChange={(e) => handleRecurringChange(index, e.target.value, false)}
+                                                        className="text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full"
+                                                    />
+                                                ) : (
+                                                    <span className="text-gray-800 font-bold truncate">{item.value}</span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
