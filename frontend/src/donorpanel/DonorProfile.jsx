@@ -16,10 +16,12 @@ import {
     CircleUser,
     Menu,
     X,
-    Key
+    Key, // Add this icon
+    Eye,
+    EyeOff
 } from "lucide-react";
 import Sidebar from "./Sidebar";
-import { getProfile, updateProfile } from "../../services/donorProfileService.js";
+import { getProfile, updateProfile, changePassword } from "../../services/donorProfileService.js";
 
 // --- Main Donor Profile Page ---
 const DonorProfile = () => {
@@ -37,7 +39,7 @@ const DonorProfile = () => {
     // State for editable data
     const [donorDetails, setDonorDetails] = useState([]);
     const [personalDetails, setPersonalDetails] = useState([]);
-
+    
     // Recurring details - read-only, from other databases
     const [recurringDetails, setRecurringDetails] = useState([
         { label: "Amount", value: "$0" },
@@ -66,7 +68,6 @@ const DonorProfile = () => {
     const [passwordSuccess, setPasswordSuccess] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-
     useEffect(() => {
         fetchProfile();
     }, []);
@@ -76,14 +77,14 @@ const DonorProfile = () => {
         if (user) {
             // Check if profile is complete by checking if required fields exist
             const hasProfileData = profile && (
-                profile.address ||
-                profile.city ||
-                profile.state ||
-                profile.country ||
-                profile.dob ||
+                profile.address || 
+                profile.city || 
+                profile.state || 
+                profile.country || 
+                profile.dob || 
                 profile.gender
             );
-
+            
             setIsProfileComplete(hasProfileData);
 
             // Donor Details - these come from user auth and profile
@@ -128,7 +129,7 @@ const DonorProfile = () => {
             setPersonalDetails([
                 {
                     label: "Mobile",
-                    value: profile?.mobile || profile?.mobile || "",
+                    value: user?.mobile || profile?.mobile || "",
                     isFromAuth: true,
                 },
                 {
@@ -168,21 +169,20 @@ const DonorProfile = () => {
         try {
             setFetchError(null);
             setLoading(true);
-
+            
             const response = await getProfile();
-
-            // The response directly has user and profile properties
+            
             if (response && response.success) {
                 setUser(response.user || null);
                 setProfile(response.profile || null);
             } else {
                 throw new Error(response?.message || 'Failed to fetch profile');
             }
-
+            
         } catch (error) {
             console.error("Error fetching profile:", error);
             setFetchError(error?.response?.data?.message || error.message || "Failed to load profile. Please refresh the page.");
-
+            
             // Try to get user from localStorage as fallback
             try {
                 const storedUser = localStorage.getItem('user');
@@ -216,8 +216,7 @@ const DonorProfile = () => {
     const saveProfileUpdates = async () => {
         try {
             setSaveError(null);
-
-            // Prepare profile data from donor details and personal details
+            
             const profileData = {
                 firstName: donorDetails[0]?.value || "",
                 lastName: donorDetails[1]?.value || "",
@@ -231,28 +230,73 @@ const DonorProfile = () => {
             };
 
             const response = await updateProfile(profileData);
-
+            
             if (response && response.success) {
-                // Refresh profile data
                 await fetchProfile();
-
-                // Exit edit mode
                 setEditingDonor(false);
-
                 alert("Profile updated successfully!");
             } else {
                 throw new Error(response?.message || 'Failed to update profile');
             }
         } catch (error) {
             console.error("Error updating profile:", error);
-
             const errorMessage = error?.response?.data?.message || error.message || "Failed to update profile. Please try again.";
             setSaveError(errorMessage);
             alert(errorMessage);
         }
     };
 
-    // Default donation activity data (will be replaced with real data from DB)
+    // Handle password change
+    const handlePasswordChange = async (e) => {
+        e.preventDefault();
+        setPasswordError('');
+        setPasswordSuccess('');
+        
+        // Validation
+        if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+            setPasswordError('Please fill in all fields');
+            return;
+        }
+        
+        if (passwordData.newPassword.length < 6) {
+            setPasswordError('New password must be at least 6 characters long');
+            return;
+        }
+        
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setPasswordError('New passwords do not match');
+            return;
+        }
+        
+        setIsChangingPassword(true);
+        
+        try {
+            const response = await changePassword(passwordData);
+            if (response && response.success) {
+                setPasswordSuccess('Password changed successfully!');
+                setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                });
+                // Close modal after 2 seconds
+                setTimeout(() => {
+                    setShowPasswordModal(false);
+                    setPasswordSuccess('');
+                }, 2000);
+            } else {
+                throw new Error(response?.message || 'Failed to change password');
+            }
+        } catch (error) {
+            console.error("Error changing password:", error);
+            const errorMessage = error?.response?.data?.message || error.message || "Failed to change password. Please try again.";
+            setPasswordError(errorMessage);
+        } finally {
+            setIsChangingPassword(false);
+        }
+    };
+
+    // Default donation activity data
     const donationActivity = [
         { donation: "$0", duration: "No donations yet" },
         { donation: "$0", duration: "No donations yet" },
@@ -340,7 +384,7 @@ const DonorProfile = () => {
                                 <div className="flex-1">
                                     <p className="text-sm text-red-800 font-medium">Error Loading Profile</p>
                                     <p className="text-xs text-red-700 mt-1">{fetchError}</p>
-                                    <button
+                                    <button 
                                         onClick={fetchProfile}
                                         className="mt-2 text-xs text-red-600 font-medium hover:text-red-700 underline"
                                     >
@@ -422,7 +466,6 @@ const DonorProfile = () => {
                                         <button
                                             onClick={() => {
                                                 if (editingDonor) {
-                                                    // If canceling edit, reload data
                                                     fetchProfile();
                                                 }
                                                 setEditingDonor(!editingDonor);
@@ -449,8 +492,9 @@ const DonorProfile = () => {
                                                         type="text"
                                                         value={item.value}
                                                         onChange={(e) => handleDonorChange(index, e.target.value, false)}
-                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                                                            }`}
+                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${
+                                                            item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                                                        }`}
                                                         disabled={item.isFromAuth}
                                                         placeholder={item.isRequired && !item.value ? "Required" : ""}
                                                     />
@@ -476,8 +520,9 @@ const DonorProfile = () => {
                                                         type={item.label === "DOB" ? "date" : "text"}
                                                         value={item.value}
                                                         onChange={(e) => handleDonorChange(index, e.target.value, true)}
-                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                                                            }`}
+                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${
+                                                            item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                                                        }`}
                                                         disabled={item.isFromAuth}
                                                         placeholder={item.isRequired && !item.value ? "Required" : ""}
                                                     />
@@ -492,14 +537,13 @@ const DonorProfile = () => {
                                 </div>
                             </div>
 
-                            {/* Recurring Details - READ ONLY, NO EDIT BUTTON */}
+                            {/* Recurring Details - READ ONLY */}
                             <div className="bg-white border border-gray-100 rounded-xl p-5 md:p-7 shadow-sm relative mb-5 w-full">
                                 <div className="flex items-center justify-between mb-6 w-full">
                                     <div className="flex items-center gap-2 text-gray-900 font-bold text-lg md:text-xl min-w-0">
                                         <span className="w-8 h-8 rounded-full flex items-center justify-center text-xs flex-shrink-0"><RefreshCw size={20} /></span>
                                         <h2 className="truncate">Recurring Details</h2>
                                     </div>
-                                    {/* No edit button - read only */}
                                     <span className="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">Read Only</span>
                                 </div>
 
@@ -521,6 +565,17 @@ const DonorProfile = () => {
                                         ))}
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* Change Password Button */}
+                            <div className="mt-4">
+                                <button
+                                    onClick={() => setShowPasswordModal(true)}
+                                    className="flex items-center gap-2 text-[#00a86b] hover:text-[#00965e] font-medium text-sm border border-[#00a86b] hover:border-[#00965e] px-4 py-2 rounded-lg transition-colors"
+                                >
+                                    <Key size={18} />
+                                    Change Password
+                                </button>
                             </div>
                         </div>
 
@@ -551,6 +606,168 @@ const DonorProfile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Password Change Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <Key size={24} className="text-[#00a86b]" />
+                                    Change Password
+                                </h2>
+                                <button
+                                    onClick={() => {
+                                        setShowPasswordModal(false);
+                                        setPasswordError('');
+                                        setPasswordSuccess('');
+                                        setPasswordData({
+                                            currentPassword: '',
+                                            newPassword: '',
+                                            confirmPassword: ''
+                                        });
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                                >
+                                    <X size={24} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handlePasswordChange}>
+                                {/* Current Password */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Current Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showCurrentPassword ? "text" : "password"}
+                                            value={passwordData.currentPassword}
+                                            onChange={(e) => setPasswordData({
+                                                ...passwordData,
+                                                currentPassword: e.target.value
+                                            })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent"
+                                            placeholder="Enter current password"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* New Password */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        New Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPassword ? "text" : "password"}
+                                            value={passwordData.newPassword}
+                                            onChange={(e) => setPasswordData({
+                                                ...passwordData,
+                                                newPassword: e.target.value
+                                            })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent"
+                                            placeholder="Enter new password (min 6 characters)"
+                                            required
+                                            minLength="6"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Password must be at least 6 characters long</p>
+                                </div>
+
+                                {/* Confirm Password */}
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Confirm New Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={passwordData.confirmPassword}
+                                            onChange={(e) => setPasswordData({
+                                                ...passwordData,
+                                                confirmPassword: e.target.value
+                                            })}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent"
+                                            placeholder="Confirm new password"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                            {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Error/Success Messages */}
+                                {passwordError && (
+                                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                                        {passwordError}
+                                    </div>
+                                )}
+                                {passwordSuccess && (
+                                    <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                                        {passwordSuccess}
+                                    </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowPasswordModal(false);
+                                            setPasswordError('');
+                                            setPasswordSuccess('');
+                                            setPasswordData({
+                                                currentPassword: '',
+                                                newPassword: '',
+                                                confirmPassword: ''
+                                            });
+                                        }}
+                                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isChangingPassword}
+                                        className="flex-1 px-4 py-2 bg-[#00a86b] text-white rounded-lg hover:bg-[#00965e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                    >
+                                        {isChangingPassword ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                Changing...
+                                            </>
+                                        ) : (
+                                            'Change Password'
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

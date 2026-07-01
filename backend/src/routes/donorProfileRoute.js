@@ -13,6 +13,6 @@ router.put('/profile', protect, updateProfile);
 // Alternative: If you want to use PATCH
 router.patch('/profile', protect, updateProfile);
 
-router.put('/change-password', protect, changePassword);
+router.post('/change-password', protect, changePassword);
 
 export default router;

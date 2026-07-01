@@ -1,6 +1,7 @@
 // controllers/donorProfileController.js
 import User from "../models/User.js";
 import DonorProfile from "../models/DonorProfile.js";
+import bcrypt from "bcryptjs";
 
 export const getProfile = async (req, res) => {
   try {
@@ -126,8 +127,9 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // Find user
-    const user = await User.findById(userId);
+    // IMPORTANT: Use .select('+password') to include password field
+    const user = await User.findById(userId).select('+password');
+    
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -135,8 +137,9 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // Check current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    // Use the comparePassword method from the schema
+    const isPasswordValid = await user.comparePassword(currentPassword);
+    
     if (!isPasswordValid) {
       return res.status(401).json({
         success: false,
@@ -144,8 +147,8 @@ export const changePassword = async (req, res) => {
       });
     }
 
-    // Update password
-    user.password = await bcrypt.hash(newPassword, 10);
+    // Set new password - pre-save hook will handle hashing
+    user.password = newPassword;
     await user.save();
 
     res.status(200).json({
@@ -154,10 +157,10 @@ export const changePassword = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error changing password:', error);
+    console.error("Error changing password:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || 'Internal server error',
     });
   }
 };
