@@ -31,7 +31,7 @@ const ExploreCampaigns = () => {
   // Sample Campaign data from Figma mockup
   const campaigns = [
     { id: 1, title: "Empower Rural Education", creator: "Teach India", progress: 65, daysLeft: 15, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&auto=format&fit=crop" },
-    { id: 2, title: "Clean Water for All", creator: "Water For Life", progress: 70, daysLeft: 10, raised: "₹7,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1548824226-f525e556e3a2?w=500&auto=format&fit=crop" },
+    { id: 2, title: "Clean Water for All", creator: "Water For Life", progress: 70, daysLeft: 10, raised: "₹7,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=500&auto=format&fit=crop" },
     { id: 3, title: "Support Cancer Patients", creator: "Hope Foundation", progress: 40, daysLeft: 30, raised: "₹4,00,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500&auto=format&fit=crop" },
     { id: 4, title: "Animal Shelter Care", creator: "Paws & Hearts", progress: 65, daysLeft: 15, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500&auto=format&fit=crop" },
     { id: 5, title: "Plant Trees Save Earth", creator: "Green Future", progress: 80, daysLeft: 5, raised: "₹8,00,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&auto=format&fit=crop" },

@@ -30,7 +30,7 @@ const DonorPanel = () => {
 
   // Recent donations mock data matching Figma
   const recentDonations = [
-    { id: 1, title: "Clean Water Project", creator: "Water For All", status: "Completed", date: "25 Jun 2026", image: "https://images.unsplash.com/photo-1548824226-f525e556e3a2?w=120&auto=format&fit=crop" },
+    { id: 1, title: "Clean Water Project", creator: "Water For All", status: "Completed", date: "25 Jun 2026", image: "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=120&auto=format&fit=crop" },
     { id: 2, title: "Education for All", creator: "Future Foundation", status: "Completed", date: "21 Feb 2026", image: "https://images.unsplash.com/photo-1577896851231-70ef18881754?w=120&auto=format&fit=crop" },
     { id: 3, title: "Medical Aid Support", creator: "Health Helpers", status: "Completed", date: "17 Mar 2026", image: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=120&auto=format&fit=crop" },
     { id: 4, title: "Plant Trees Save Earth", creator: "Green Future", status: "Completed", date: "19 May 2026", image: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=120&auto=format&fit=crop" },
