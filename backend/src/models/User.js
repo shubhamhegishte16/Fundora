@@ -26,6 +26,19 @@ const userSchema = new mongoose.Schema(
       enum: ['donor', 'creator', 'admin'],
       default: 'donor',
     },
+    // --- Added for the admin "Manage Users" panel ---
+    status: {
+      type: String,
+      enum: ['active', 'suspended', 'inactive'],
+      default: 'active',
+    },
+    kyc: {
+      type: String,
+      enum: ['verified', 'pending', 'n/a'],
+      default: function () {
+        return this.role === 'creator' ? 'pending' : 'n/a';
+      },
+    },
   },
   {
     timestamps: true,
