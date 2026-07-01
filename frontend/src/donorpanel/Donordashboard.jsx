@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ExploreCampaigns from "./ExploreCampaigns";
+import SavedCampaigns from "./SavedCampaigns";
 import { Bell, Menu, TrendingUp, Users, Award, Leaf, Heart, ChevronRight } from "lucide-react";
 
 const DonorPanel = () => {
@@ -250,6 +251,8 @@ const DonorPanel = () => {
             </>
           ) : activeTab === "Explore Campaigns" ? (
             <ExploreCampaigns />
+          ) : activeTab === "Saved Campaigns" ? (
+            <SavedCampaigns />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center text-brand-secondary">
               <h3 className="text-xl font-bold">{activeTab} Section</h3>
