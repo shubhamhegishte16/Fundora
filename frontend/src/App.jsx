@@ -7,6 +7,7 @@ import DonorPanel from "./donorpanel/Donordashboard";
 import CreatorPanelApp from "./Creatorpanel/CreatorPanelApp";
 import DonorProfile from "./donorpanel/DonorProfile";
 import DonorReward from "./donorpanel/DonorRewardSection";
+import CampaignDetail from "./donorpanel/CampaignDetail";
 
 
 
@@ -41,6 +42,8 @@ function App() {
         <Route path="/donordashboard" element={<DonorPanel />} />
         <Route path="/donorprofile" element={<DonorProfile />} />
         <Route path="/donorreward" element={<DonorReward />} />
+
+        <Route path="/CampDetail" element={<CampaignDetail />}/>
 
         {/* Redirects */}
         <Route

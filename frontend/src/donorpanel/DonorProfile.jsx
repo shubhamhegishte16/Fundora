@@ -16,16 +16,92 @@ import {
     CircleUser,
     Menu,
     X,
-    Key, // Add this icon
+    Key, 
     Eye,
-    EyeOff
+    EyeOff,
+    Trophy,
+    UserStar,
+    CalendarSync,
+    IdCardLanyard,
+    Cake,
+    Globe,
+    Landmark,
+    Podium,
+    Heart,
+    Sprout,
+    TreeDeciduous,
+    Gem,
+    Cross
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { getProfile, updateProfile, changePassword } from "../../services/donorProfileService.js";
 
+// --- Badge Configuration ---
+const BADGE_CONFIG = {
+    'First Milestone': {
+        icon: <Trophy />,
+        requirement: 'First donation made',
+        check: (data) => data.totalDonations >= 1
+    },
+    'Squad Supporter': {
+        icon: <UserStar />,
+        requirement: '5+ donations',
+        check: (data) => data.donationCount >= 5
+    },
+    'Stock Keeper': {
+        icon: <CalendarSync />,
+        requirement: 'Recurring donor',
+        check: (data) => data.isRecurring === true
+    },
+    'Holdout Hero': {
+        icon: <IdCardLanyard />,
+        requirement: '12+ months active',
+        check: (data) => data.monthsActive >= 12
+    },
+    'Anniversary Anchor': {
+        icon: <Cake />,
+        requirement: '24+ months active',
+        check: (data) => data.monthsActive >= 24
+    },
+    'Local Upper': {
+        icon: <Globe />,
+        requirement: '$500+ donated',
+        check: (data) => data.totalDonations >= 500
+    },
+    'Lifelong Pillar': {
+        icon: <Landmark />,
+        requirement: '36+ months active',
+        check: (data) => data.monthsActive >= 36
+    },
+    'First Keeper': {
+        icon: <Podium />,
+        requirement: '10+ donations',
+        check: (data) => data.donationCount >= 10
+    },
+    'Awarded Fund': {
+        icon: <Heart />,
+        requirement: '$1000+ donated',
+        check: (data) => data.totalDonations >= 1000
+    },
+    'Ground Guardian': {
+        icon: <Sprout />,
+        requirement: 'Recurring + 6+ months',
+        check: (data) => data.isRecurring === true && data.monthsActive >= 6
+    },
+    'Canopy Cheerpien': {
+        icon: <TreeDeciduous />,
+        requirement: '$250+ and 3+ donations',
+        check: (data) => data.totalDonations >= 250 && data.donationCount >= 3
+    },
+    'Control Peak': {
+        icon: <Gem />,
+        requirement: '$2000+ donated',
+        check: (data) => data.totalDonations >= 2000
+    }
+};
+
 // --- Main Donor Profile Page ---
 const DonorProfile = () => {
-    // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
     const [activeTab, setActiveTab] = useState("Profile Settings");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
@@ -68,11 +144,79 @@ const DonorProfile = () => {
     const [passwordSuccess, setPasswordSuccess] = useState('');
     const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+    // Badges state
+    const [badges, setBadges] = useState([]);
+    const [badgeStats, setBadgeStats] = useState({
+        totalDonations: 0,
+        donationCount: 0,
+        monthsActive: 0,
+        isRecurring: false
+    });
+    const [badgesLoading, setBadgesLoading] = useState(true);
+
     useEffect(() => {
         fetchProfile();
+        fetchBadgeData();
     }, []);
 
-    // Update donor and personal details when profile data loads
+    // Fetch badge data from backend
+    const fetchBadgeData = async () => {
+        try {
+            setBadgesLoading(true);
+            
+            // Replace with your actual API endpoint
+            const response = await fetch('/api/donor/badges', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch badge data');
+            }
+
+            const data = await response.json();
+            
+            // Update badge stats from backend
+            setBadgeStats({
+                totalDonations: data.totalDonations || 0,
+                donationCount: data.donationCount || 0,
+                monthsActive: data.monthsActive || 0,
+                isRecurring: data.isRecurring || false
+            });
+
+            // Set badges with unlock status
+            const badgeList = Object.keys(BADGE_CONFIG).map(name => ({
+                name,
+                icon: BADGE_CONFIG[name].icon,
+                requirement: BADGE_CONFIG[name].requirement,
+                unlocked: BADGE_CONFIG[name].check({
+                    totalDonations: data.totalDonations || 0,
+                    donationCount: data.donationCount || 0,
+                    monthsActive: data.monthsActive || 0,
+                    isRecurring: data.isRecurring || false
+                })
+            }));
+
+            setBadges(badgeList);
+
+        } catch (error) {
+            console.error("Error fetching badge data:", error);
+            // Fallback to default badges with all locked
+            const defaultBadges = Object.keys(BADGE_CONFIG).map(name => ({
+                name,
+                icon: BADGE_CONFIG[name].icon,
+                requirement: BADGE_CONFIG[name].requirement,
+                unlocked: false
+            }));
+            setBadges(defaultBadges);
+        } finally {
+            setBadgesLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (user) {
             // Check if profile is complete by checking if required fields exist
@@ -87,7 +231,6 @@ const DonorProfile = () => {
             
             setIsProfileComplete(hasProfileData);
 
-            // Donor Details - these come from user auth and profile
             setDonorDetails([
                 {
                     label: "First Name",
@@ -125,7 +268,6 @@ const DonorProfile = () => {
                 },
             ]);
 
-            // Personal Details - combine user auth and profile data
             setPersonalDetails([
                 {
                     label: "Mobile",
@@ -183,7 +325,6 @@ const DonorProfile = () => {
             console.error("Error fetching profile:", error);
             setFetchError(error?.response?.data?.message || error.message || "Failed to load profile. Please refresh the page.");
             
-            // Try to get user from localStorage as fallback
             try {
                 const storedUser = localStorage.getItem('user');
                 if (storedUser) {
@@ -199,7 +340,6 @@ const DonorProfile = () => {
         }
     };
 
-    // Handle donor detail change
     const handleDonorChange = (index, value, isPersonal = false) => {
         if (isPersonal) {
             const updated = [...personalDetails];
@@ -212,7 +352,6 @@ const DonorProfile = () => {
         }
     };
 
-    // Save profile updates
     const saveProfileUpdates = async () => {
         try {
             setSaveError(null);
@@ -246,7 +385,6 @@ const DonorProfile = () => {
         }
     };
 
-    // Handle password change
     const handlePasswordChange = async (e) => {
         e.preventDefault();
         setPasswordError('');
@@ -296,7 +434,6 @@ const DonorProfile = () => {
         }
     };
 
-    // Default donation activity data
     const donationActivity = [
         { donation: "$0", duration: "No donations yet" },
         { donation: "$0", duration: "No donations yet" },
@@ -310,7 +447,6 @@ const DonorProfile = () => {
         { label: "My Rewards" }
     ];
 
-    // Now it's safe to have conditional returns
     if (loading) {
         return (
             <div className="h-screen flex items-center justify-center">
@@ -380,7 +516,7 @@ const DonorProfile = () => {
                     {fetchError && (
                         <div className="px-4 md:px-8 pt-4">
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                                <div className="text-red-600 text-lg">❌</div>
+                                <div className="text-red-600 text-lg"><Cross size={10}/></div>
                                 <div className="flex-1">
                                     <p className="text-sm text-red-800 font-medium">Error Loading Profile</p>
                                     <p className="text-xs text-red-700 mt-1">{fetchError}</p>
@@ -398,7 +534,7 @@ const DonorProfile = () => {
                     {saveError && (
                         <div className="px-4 md:px-8 pt-4">
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                                <div className="text-red-600 text-lg">❌</div>
+                                <div className="text-red-600 text-lg"><Cross size={10}/></div>
                                 <div className="flex-1">
                                     <p className="text-sm text-red-800 font-medium">Error Saving Profile</p>
                                     <p className="text-xs text-red-700 mt-1">{saveError}</p>
@@ -438,7 +574,7 @@ const DonorProfile = () => {
                                     <p className="text-sm text-yellow-800 font-medium">Profile Incomplete</p>
                                     <p className="text-xs text-yellow-700 mt-1">
                                         Please fill in your address, city, state, country, DOB, and gender to complete your profile.
-                                        Click the edit button (✏️) next to "Donor Details" to update your information.
+                                        Click the edit button next to "Donor Details" to update your information.
                                     </p>
                                 </div>
                             </div>
@@ -604,6 +740,83 @@ const DonorProfile = () => {
                             </div>
                         </div>
                     </div>
+                
+                    <div className="px-4 md:px-6 pb-6">
+                        <div className="bg-white border border-gray-100 rounded-xl p-5 md:p-7 shadow-sm w-full">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2 text-gray-900 font-bold text-lg md:text-xl">
+                                    <Award size={24} className="text-[#00a86b]" />
+                                    <h2>Your Badges</h2>
+                                </div>
+                                <button 
+                                    onClick={fetchBadgeData}
+                                    className="text-sm text-[#00a86b] hover:text-[#00965e] font-medium flex items-center gap-1"
+                                >
+                                    <RefreshCw size={14} />
+                                    Refresh
+                                </button>
+                            </div>
+
+                            {badgesLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00a86b]"></div>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                                        {badges.map((badge) => (
+                                            <div
+                                                key={badge.name}
+                                                className={`relative flex flex-col items-center p-3 rounded-lg transition-all duration-300 ${
+                                                    badge.unlocked 
+                                                        ? 'bg-gradient-to-br from-[#00a86b]/10 to-[#00a86b]/5 border border-[#00a86b]/30 hover:shadow-md' 
+                                                        : 'bg-gray-50 border border-gray-200 opacity-60'
+                                                }`}
+                                            >
+                                                {/* Badge Icon */}
+                                                <div className={`text-3xl mb-1 ${badge.unlocked ? '' : 'filter blur-[1px]'}`}>
+                                                    {badge.icon}
+                                                </div>
+                                                
+                                                {/* Badge Name */}
+                                                <span className={`text-xs font-medium text-center leading-tight ${
+                                                    badge.unlocked ? 'text-gray-800' : 'text-gray-400'
+                                                }`}>
+                                                    {badge.name}
+                                                </span>
+
+                                                {/* Status */}
+                                                <span className={`mt-1 text-[10px] font-medium ${
+                                                    badge.unlocked ? 'text-[#00a86b]' : 'text-gray-400'
+                                                }`}>
+                                                    {badge.unlocked ? '✓' : '🔒'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Progress Summary */}
+                                    <div className="mt-6 pt-4 border-t border-gray-100">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">Progress</span>
+                                            <span className="font-medium text-[#00a86b]">
+                                                {badges.filter(b => b.unlocked).length} / {badges.length}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
+                                            <div 
+                                                className="bg-[#00a86b] h-1.5 rounded-full transition-all duration-500"
+                                                style={{ 
+                                                    width: `${(badges.filter(b => b.unlocked).length / badges.length) * 100}%` 
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    {/* ===== END BADGES SECTION ===== */}
                 </div>
             </div>
 

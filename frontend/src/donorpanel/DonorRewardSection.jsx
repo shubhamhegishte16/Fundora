@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Menu, X, ArrowRight, Award, Flame, Sprout, Trees, Globe, Zap, Heart, Users, Bell } from "lucide-react";
+import { Menu, X, ArrowRight, Award, Flame, Sprout, Trees, Globe, Zap, Heart, Users, Bell, Star } from "lucide-react";
 import Sidebar from "./Sidebar";
 
 const DonorReward = () => {
@@ -88,7 +88,7 @@ const DonorReward = () => {
                     <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
 
                         <div className="flex justify-between items-end mb-4">
-                            <h2 className="text-base font-bold text-gray-900">Your Rewards</h2>
+                            <h2 className="text-[22px] font-bold text-gray-900">Your Rewards</h2>
                             <span className="text-sm font-bold text-gray-900">Points: <span className="text-[#00966B]">{lifetimePoints}</span></span>
                         </div>
 
@@ -100,7 +100,7 @@ const DonorReward = () => {
                                     {milestones.map((item, index) => (
                                         <div key={index} className="flex flex-col items-center gap-2">
                                             <div className={`w-9 h-9 rounded-full flex items-center justify-center border ${item.unlocked ? "bg-emerald-50 border-[#00966B] text-[#00966B] shadow-xs" : "bg-gray-50 border-gray-200 text-gray-300"}`}>
-                                                <span className="text-xs">★</span>
+                                                <span className="text-xs"><Star size={15} /></span>
                                             </div>
                                             <span className="text-xs font-medium text-gray-500">{item.score}</span>
                                         </div>
@@ -111,7 +111,7 @@ const DonorReward = () => {
 
                         {/* Action Button Segment */}
                         <div className="flex justify-end mb-8">
-                            <button className="bg-[#00966B] hover:bg-[#007F5A] text-white font-medium px-4 py-2 rounded-xl flex items-center gap-1.5 text-xs transition-all shadow-sm hover:shadow-md">
+                            <button className="bg-[#00966B] hover:bg-[#007F5A] text-white font-medium px-4 py-2 rounded-xl flex items-center gap-1.5 text-[15px] transition-all shadow-sm hover:shadow-md">
                                 Donate <ArrowRight size={13} />
                             </button>
                         </div>
@@ -120,12 +120,12 @@ const DonorReward = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                             {/* Left Card Deck Column */}
                             <div className="lg:col-span-5 border border-gray-100 rounded-xl p-5 shadow-sm bg-white">
-                                <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-1">My Rewards <ArrowRight size={14} /></h3>
+                                <h3 className="text-[16px] font-bold text-gray-900 mb-4 flex items-center gap-1">My Rewards <ArrowRight size={14} /></h3>
                                 <div className="space-y-2.5">
                                     {rewardsData.map((reward) => (
                                         <div key={reward.id} className="flex justify-between items-center p-3 border border-gray-100 rounded-lg hover:bg-gray-50/50 transition-colors shadow-xs">
-                                            <span className="text-xs font-medium text-gray-700 truncate mr-2">{reward.title}</span>
-                                            <button className="shrink-0 text-[#00966B] font-bold text-[11px] flex items-center gap-0.5 hover:underline">
+                                            <span className="text-[14px] font-medium text-gray-700 truncate mr-2">{reward.title}</span>
+                                            <button className="shrink-0 text-[#00966B] font-bold text-[12px] flex items-center gap-0.5 hover:underline">
                                                 View Reward <ArrowRight size={10} />
                                             </button>
                                         </div>
@@ -136,7 +136,7 @@ const DonorReward = () => {
                             {/* Right Grid Column Badge Vault */}
                             <div className="lg:col-span-7 space-y-4">
                                 <div className="flex items-baseline justify-between">
-                                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1">Lifetime Badges Vault <ArrowRight size={14} /></h3>
+                                    <h3 className="text-[16px] font-bold text-gray-900 flex items-center gap-1">Lifetime Badges Vault <ArrowRight size={14} /></h3>
                                     <span className="text-xs text-gray-400 font-medium">Unlocked: <span className="text-gray-900 font-bold">{earnedCount}</span>/{badgeVault.length}</span>
                                 </div>
 
@@ -148,8 +148,8 @@ const DonorReward = () => {
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <div className="flex items-center justify-between gap-2">
-                                                    <h4 className="text-xs font-bold text-gray-900 truncate">{badge.name}</h4>
-                                                    <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${badge.unlocked ? "bg-emerald-50 text-[#00966B]" : "bg-gray-100 text-gray-400"}`}>
+                                                    <h4 className="text-[14px] font-bold text-gray-900 truncate">{badge.name}</h4>
+                                                    <span className={`text-[9px] font-bold lowercase tracking-wider px-1.5 py-0.5 rounded ${badge.unlocked ? "bg-emerald-50 text-[#00966B]" : "bg-gray-100 text-gray-400"}`}>
                                                         {badge.unlocked ? "Earned" : "Locked"}
                                                     </span>
                                                 </div>

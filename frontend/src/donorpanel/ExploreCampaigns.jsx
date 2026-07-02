@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { LayoutGrid, Heart, MapPin, Clock, Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import CampaignDetail from "./CampaignDetail";
 
 const ExploreCampaigns = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [filters, setFilters] = useState({
     category: "All Categories",
     goal: "Goal Amount",
@@ -38,6 +40,10 @@ const ExploreCampaigns = () => {
     { id: 6, title: "Flood Relief Support", creator: "Helping Hands", progress: 60, daysLeft: 25, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1547683905-f686c993aae5?w=500&auto=format&fit=crop" }
   ];
 
+  if (selectedCampaign) {
+    return <CampaignDetail campaign={selectedCampaign} onBack={() => setSelectedCampaign(null)} />;
+  }
+
   return (
     <div className="space-y-6 sm:space-y-8 animate-fadeIn">
       {/* Header text */}
@@ -64,7 +70,7 @@ const ExploreCampaigns = () => {
       {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {campaigns.map((camp) => (
-          <div key={camp.id} className="bg-white border border-brand-border/60 rounded-3xl overflow-hidden hover:border-brand-border/80 transition-all hover:shadow-md flex flex-col group">
+          <div key={camp.id} className="bg-white border border-brand-border/60 rounded-3xl overflow-hidden hover:border-brand-border/80 transition-all hover:shadow-md flex flex-col group" onClick={() => setSelectedCampaign(camp)}>
             {/* Image section */}
             <div className="h-48 w-full overflow-hidden relative">
               <img src={camp.image} alt={camp.title} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
