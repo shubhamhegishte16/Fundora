@@ -25,11 +25,30 @@ const PAGES = {
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
+  // Set alongside a navigate('create') call when editing an existing campaign
+  // (see MyCampaigns.jsx's Edit button). Cleared whenever we navigate anywhere else.
+  const [editingCampaignId, setEditingCampaignId] = useState(null);
+
+  const navigate = (page, options = {}) => {
+    setEditingCampaignId(page === 'create' ? options.campaignId || null : null);
+    setActivePage(page);
+  };
+
   const { component: PageComponent, title, subtitle } = PAGES[activePage];
+  const isCreatePage = activePage === 'create';
 
   return (
-    <AppShell activePage={activePage} onNavigate={setActivePage} title={title} subtitle={subtitle}>
-      <PageComponent onNavigate={setActivePage} />
+    <AppShell
+      activePage={activePage}
+      onNavigate={navigate}
+      title={isCreatePage && editingCampaignId ? 'Edit Campaign' : title}
+      subtitle={isCreatePage && editingCampaignId ? 'Update your campaign details' : subtitle}
+    >
+      {isCreatePage ? (
+        <PageComponent campaignId={editingCampaignId} onNavigate={navigate} />
+      ) : (
+        <PageComponent onNavigate={navigate} />
+      )}
     </AppShell>
   );
 }

@@ -11,7 +11,7 @@ const STATUS_LABEL = { active: 'Active', completed: 'Completed', draft: 'Draft' 
 const FILTERS = ['all', 'active', 'completed', 'draft'];
 const DEFAULT_THEME = 'from-emerald-400 to-teal-500';
 
-function CampaignCard({ campaign }) {
+function CampaignCard({ campaign, onEdit }) {
   return (
     <Card>
       <div className={`relative h-32 w-full overflow-hidden rounded-lg bg-gradient-to-br ${campaign.theme || DEFAULT_THEME}`}>
@@ -41,11 +41,18 @@ function CampaignCard({ campaign }) {
           <span className="flex items-center gap-1"><Icon.Clock className="h-3.5 w-3.5" />{campaign.daysLeft}d left</span>
         )}
       </div>
+
+      <button
+        onClick={() => onEdit(campaign._id)}
+        className="mt-3 w-full rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+      >
+        Edit Campaign
+      </button>
     </Card>
   );
 }
 
-export default function MyCampaigns() {
+export default function MyCampaigns({ onNavigate }) {
   const [filter, setFilter] = useState('all');
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +75,9 @@ export default function MyCampaigns() {
 
   const filtered = filter === 'all' ? campaigns : campaigns.filter((c) => c.status === filter);
 
+  const goToEdit = (campaignId) => onNavigate?.('create', { campaignId });
+  const goToCreate = () => onNavigate?.('create');
+
   return (
     <>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -84,7 +94,7 @@ export default function MyCampaigns() {
             </button>
           ))}
         </div>
-        <Button icon={Icon.Plus}>Create Campaign</Button>
+        <Button icon={Icon.Plus} onClick={goToCreate}>Create Campaign</Button>
       </div>
 
       {loading && (
@@ -101,7 +111,7 @@ export default function MyCampaigns() {
 
       {!loading && !error && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => <CampaignCard key={c._id} campaign={c} />)}
+          {filtered.map((c) => <CampaignCard key={c._id} campaign={c} onEdit={goToEdit} />)}
         </div>
       )}
 
