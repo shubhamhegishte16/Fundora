@@ -7,7 +7,6 @@ import {
   Bookmark, 
   Award, 
   Users, 
-  Globe, 
   Bell, 
   Settings,
   ArrowRight
@@ -23,7 +22,6 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
     { id: "Saved Campaigns", label: "Saved Campaigns", icon: Bookmark },
     { id: "Rewards & Badges", label: "Rewards & Badges", icon: Award },
     { id: "Following Creators", label: "Following Creators", icon: Users },
-    { id: "Community", label: "Community", icon: Globe },
     { id: "Notifications", label: "Notifications", icon: Bell },
     { id: "Profile Settings", label: "Profile Settings", icon: Settings },
   ];
