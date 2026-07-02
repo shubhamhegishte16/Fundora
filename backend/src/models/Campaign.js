@@ -24,9 +24,20 @@ const campaignSchema = new mongoose.Schema(
     raisedAmount: { type: Number, default: 0, min: 0 }, // denormalized, kept in sync by Donation hooks
     donorCount: { type: Number, default: 0, min: 0 }, // denormalized
 
-    status: { type: String, enum: ['draft', 'active', 'completed'], default: 'draft', index: true },
-    startDate: { type: Date, default: null }, // set when status moves draft -> active
+    status: {
+      type: String,
+      enum: ['draft', 'pending_review', 'active', 'completed'],
+      default: 'draft',
+      index: true,
+    },
+    startDate: { type: Date, default: null }, // set when status moves pending_review -> active
     endDate: { type: Date, default: null },
+
+    // Admin review trail. rejectionReason is set (and status reverted to
+    // 'draft') on rejection; cleared again once the creator resubmits.
+    rejectionReason: { type: String, default: null },
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
+    reviewedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

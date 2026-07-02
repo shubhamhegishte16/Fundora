@@ -76,7 +76,10 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
       status,
     };
 
-    if (status === 'active') {
+    if (status === 'pending_review') {
+      // startDate/endDate get finalized by the admin on approval, but we
+      // still pass the creator's requested duration through as endDate so
+      // it's available for reference during review.
       const start = new Date();
       const end = new Date(start);
       end.setDate(end.getDate() + (Number(form.durationDays) || 30));
@@ -248,8 +251,8 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
         </Card>
 
         <Card className="space-y-3">
-          <Button className="w-full" disabled={saving} onClick={() => handleSave('active')}>
-            {saving ? 'Saving…' : isEditing ? 'Publish Changes' : 'Publish Campaign'}
+          <Button className="w-full" disabled={saving} onClick={() => handleSave('pending_review')}>
+            {saving ? 'Saving…' : isEditing ? 'Submit for Review' : 'Submit for Review'}
           </Button>
           <Button variant="outline" className="w-full" disabled={saving} onClick={() => handleSave('draft')}>
             {saving ? 'Saving…' : 'Save as Draft'}

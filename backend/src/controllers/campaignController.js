@@ -1,5 +1,9 @@
 import Campaign from '../models/Campaign.js';
 
+// Creators may only ever place a campaign into one of these states directly.
+// 'active' is admin-only (via approveCampaign); 'completed' is system-driven.
+const CREATOR_ALLOWED_STATUSES = ['draft', 'pending_review'];
+
 // ─── GET /api/creator/campaigns ────────────────────────────────────────────
 // List all campaigns belonging to the logged-in creator
 export const getMyCampaigns = async (req, res) => {
@@ -36,6 +40,13 @@ export const createCampaign = async (req, res) => {
       });
     }
 
+    if (status !== undefined && !CREATOR_ALLOWED_STATUSES.includes(status)) {
+      return res.status(403).json({
+        success: false,
+        message: "Creators can only set status to 'draft' or 'pending_review'",
+      });
+    }
+
     const campaign = await Campaign.create({
       creator: req.user._id,
       title,
@@ -62,10 +73,24 @@ export const updateCampaign = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Campaign not found' });
     }
 
+    if (req.body.status !== undefined && !CREATOR_ALLOWED_STATUSES.includes(req.body.status)) {
+      return res.status(403).json({
+        success: false,
+        message: "Creators can only set status to 'draft' or 'pending_review'",
+      });
+    }
+
     const fields = ['title', 'description', 'category', 'goalAmount', 'coverImageUrl', 'status', 'startDate', 'endDate'];
     fields.forEach((f) => {
       if (req.body[f] !== undefined) campaign[f] = req.body[f];
     });
+
+    // Resubmitting for review clears any prior admin decision/trail.
+    if (req.body.status === 'pending_review') {
+      campaign.rejectionReason = null;
+      campaign.reviewedBy = null;
+      campaign.reviewedAt = null;
+    }
 
     await campaign.save();
     res.json({ success: true, campaign });

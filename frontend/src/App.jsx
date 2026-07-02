@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import LandingPage from "./LandingPage"; // ← new landing page
 
 import SignupFlow from "./components/SignupFlow";
 import LoginFlow from "./components/LoginFlow";
@@ -8,8 +9,6 @@ import CreatorPanelApp from "./Creatorpanel/CreatorPanelApp";
 import DonorProfile from "./donorpanel/DonorProfile";
 import DonorReward from "./donorpanel/DonorRewardSection";
 import CampaignDetail from "./donorpanel/CampaignDetail";
-
-
 
 {/* Admin Imports*/}
 import { AdminAuthProvider } from "./Adminpanel/context/AdminAuthContext";
@@ -26,8 +25,6 @@ import Fraudalert from "./Adminpanel/pages/Fraudalert";
 import Notifications from "./Adminpanel/pages/Notifications";
 import Reports from "./Adminpanel/pages/Reports";
 import Settings from "./Adminpanel/pages/Settings";
-
-const LandingPage = () => <div className="min-h-screen bg-bg-light" />;
 
 function App() {
   return (
@@ -46,45 +43,25 @@ function App() {
         <Route path="/CampDetail" element={<CampaignDetail />}/>
 
         {/* Redirects */}
-        <Route
-          path="/donor-panel"
-          element={<Navigate to="/donordashboard" replace />}
-        />
-        <Route
-          path="/donor-profile"
-          element={<Navigate to="/donorprofile" replace />}
-        />
-        <Route
-          path="/donor-reward"
-          element={<Navigate to="/donorreward" replace />}
-        />
+        <Route path="/donor-panel" element={<Navigate to="/donordashboard" replace />} />
+        <Route path="/donor-profile" element={<Navigate to="/donorprofile" replace />} />
+        <Route path="/donor-reward" element={<Navigate to="/donorreward" replace />} />
 
         {/* Creator */}
         <Route path="/creator-panel" element={<CreatorPanelApp />} />
 
         {/* Admin Login */}
-        <Route
-          path="/admin/login"
-          element={
-            <AdminAuthProvider>
-              <AdminLogin />
-            </AdminAuthProvider>
-          }
-        />
+        <Route path="/admin/login" element={
+          <AdminAuthProvider><AdminLogin /></AdminAuthProvider>
+        } />
 
         {/* Protected Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <AdminAuthProvider>
-              <ProtectedAdminRoute>
-                <AdminLayout />
-              </ProtectedAdminRoute>
-            </AdminAuthProvider>
-          }
-        >
+        <Route path="/admin" element={
+          <AdminAuthProvider>
+            <ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>
+          </AdminAuthProvider>
+        }>
           <Route index element={<Navigate to="dashboard" replace />} />
-
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="campaigns" element={<Managecampaigns />} />

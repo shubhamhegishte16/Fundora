@@ -24,7 +24,7 @@ const WelcomePanel = ({ onSignInClick }) => {
         {/* Top Empty Spacer/Logo Area */}
         <div className="flex items-center justify-start">
           <span className="text-xl font-extrabold tracking-wider bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
-            ARISEO
+            ELPIS
           </span>
         </div>
 
@@ -40,7 +40,7 @@ const WelcomePanel = ({ onSignInClick }) => {
             <br />
             TO
             <br />
-            ARISEO
+            ELPIS
           </motion.h1>
           <motion.div 
             initial={{ opacity: 0 }}

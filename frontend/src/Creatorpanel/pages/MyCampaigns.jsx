@@ -6,9 +6,9 @@ import Pill from '../components/ui/Pill.jsx';
 import ProgressBar from '../components/ui/ProgressBar.jsx';
 import { getMyCampaigns } from "../../../services/campaignService.js";
 
-const STATUS_TINT = { active: 'emerald', completed: 'blue', draft: 'slate' };
-const STATUS_LABEL = { active: 'Active', completed: 'Completed', draft: 'Draft' };
-const FILTERS = ['all', 'active', 'completed', 'draft'];
+const STATUS_TINT = { active: 'emerald', completed: 'blue', draft: 'slate', pending_review: 'amber' };
+const STATUS_LABEL = { active: 'Active', completed: 'Completed', draft: 'Draft', pending_review: 'Pending Review' };
+const FILTERS = ['all', 'active', 'completed', 'draft', 'pending_review'];
 const DEFAULT_THEME = 'from-emerald-400 to-teal-500';
 
 function CampaignCard({ campaign, onEdit }) {

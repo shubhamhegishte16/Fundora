@@ -59,13 +59,13 @@ const LoginFlow = () => {
           </div>
 
           <div className="relative z-10 flex flex-col justify-between h-full w-full grow">
-            <span className="text-xl font-extrabold tracking-wider bg-white/10 px-4 py-1.5 rounded-full w-fit">ARISEO</span>
+            <span className="text-xl font-extrabold tracking-wider bg-white/10 px-4 py-1.5 rounded-full w-fit">ELPIS</span>
             <div className="my-auto py-12 text-center lg:text-left">
               <h1 className="text-3xl sm:text-4xl font-black tracking-widest leading-tight">WELCOME BACK</h1>
               <p className="mt-4 text-xs tracking-wider uppercase text-light-green opacity-60">Empowering creators. Connecting donors.</p>
             </div>
             <div className="flex flex-col items-center lg:items-start gap-3 mt-auto border-t border-white/15 pt-6">
-              <span className="text-sm font-medium text-white/80">New to Ariseo?</span>
+              <span className="text-sm font-medium text-white/80">New to ELPIS?</span>
               <button onClick={() => navigate("/signup")} className="px-8 py-2.5 rounded-full border-2 border-white/60 text-white font-semibold text-sm hover:border-white transition-all cursor-pointer">
                 Create Account
               </button>

@@ -20,7 +20,7 @@ const Step1Base = ({ formData, setFormData, errors, onNext }) => {
           Sign Up
         </h2>
         <p className="text-xs text-brand-secondary mt-1">
-          Create your Ariseo account to get started
+          Create your ELPIS account to get started
         </p>
       </div>
 

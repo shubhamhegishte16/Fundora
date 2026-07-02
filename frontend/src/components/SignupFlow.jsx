@@ -370,7 +370,7 @@ const SignupFlow = () => {
                       Welcome Aboard, Donor!
                     </h2>
                     <p className="text-sm text-brand-secondary max-w-md mb-6 leading-relaxed">
-                      Thank you for joining <strong>Ariseo</strong>, <span className="font-semibold text-brand-text">{formData.fullName}</span>. 
+                      Thank you for joining <strong>ELPIS</strong>, <span className="font-semibold text-brand-text">{formData.fullName}</span>. 
                       Your donor account is active. Get ready to discover and support revolutionary campaigns!
                     </p>
                   </>

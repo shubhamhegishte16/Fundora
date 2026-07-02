@@ -86,25 +86,24 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log("PATCH body:", req.body);
-
     const patch = {};
     for (const key of ALLOWED_FIELDS) {
       if (key in req.body) patch[key] = req.body[key];
     }
-
-    console.log("Patch object:", patch);
 
     const user = await User.findByIdAndUpdate(id, patch, {
       new: true,
       runValidators: true,
     }).select("-password");
 
-    console.log("Updated user:", user);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
 
     res.status(200).json({ success: true, user });
   } catch (error) {
-    console.error(error);
+    console.error('updateUser error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to update user' });
   }
 };
 

@@ -9,6 +9,7 @@ import adminUserRoutes from './routes/adminUserRoutes.js';
 import adminAuthRoutes from './routes/adminAuthRoutes.js';
 import donorProfileRoute from "./routes/donorProfileRoute.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
+import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
 import donorDashboardRoutes from "./routes/donorDashboardRoutes.js";
 
 dotenv.config();
@@ -34,6 +35,7 @@ app.use('/api/admin', adminUserRoutes);
 
 
 app.use("/api/creator/campaigns", campaignRoutes);
+app.use("/api/admin/campaigns", adminCampaignRoutes);
 
 app.use("/api/donor", donorProfileRoute);
 app.use("/api/donor/dashboard", donorDashboardRoutes);
