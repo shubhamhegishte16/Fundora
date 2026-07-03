@@ -13,7 +13,13 @@ import {
   Building,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Receipt,
+  Download,
+  Mail,
+  Printer,
+  X,
+  CheckCircle
 } from "lucide-react";
 
 const CampaignDetail = ({ campaign, onBack }) => {
@@ -26,6 +32,8 @@ const CampaignDetail = ({ campaign, onBack }) => {
   const [selectedPayment, setSelectedPayment] = useState("Google Pay");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [receiveUpdates, setReceiveUpdates] = useState(true);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [receiptData, setReceiptData] = useState(null);
 
   // Safe fallback for numbers
   const safeNumber = (value, fallback = 0) => {
@@ -57,6 +65,7 @@ const CampaignDetail = ({ campaign, onBack }) => {
     const amount = parseFloat(donationAmount) || 0;
     const tip = amount * 0.05;
     const total = amount + tip;
+
     return { amount, tip, total };
   };
 
@@ -64,14 +73,13 @@ const CampaignDetail = ({ campaign, onBack }) => {
 
   const paymentMethods = [
     { id: "Google Pay", icon: Smartphone, label: "Google Pay" },
-    { id: "G Pay", icon: Smartphone, label: "G Pay" },
+    { id: "Bank Transfer", icon: Smartphone, label: "Bank Transfer" },
     { id: "Credit or Debit", icon: CreditCard, label: "Credit or Debit" },
     { id: "PhonePay", icon: Smartphone, label: "PhonePay" }
   ];
 
   const handleDonateClick = () => {
     setShowDonation(!showDonation);
-    // Scroll to donation section after a small delay
     setTimeout(() => {
       if (donationRef.current) {
         donationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -81,7 +89,96 @@ const CampaignDetail = ({ campaign, onBack }) => {
 
   const handlePay = () => {
     if (total === 0) return;
-    alert(`Processing payment of $${total.toFixed(2)}`);
+
+    if (total <= 0) {
+      alert("Amount must be more than 0");
+      return;
+    }
+
+    // Generate receipt data
+    const receipt = {
+      receiptId: `RCP-${Date.now().toString().slice(-8)}`,
+      date: new Date().toLocaleString(),
+      campaign: {
+        title: data.title,
+        creator: data.creator
+      },
+      donation: {
+        amount: amount,
+        tip: tip,
+        total: total
+      },
+      paymentMethod: selectedPayment,
+      isAnonymous: isAnonymous,
+      donor: isAnonymous ? "Anonymous Donor" : "User Name",
+      transactionId: `TXN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
+    };
+
+    setReceiptData(receipt);
+    setShowReceipt(true);
+
+    // Close donation section
+    setShowDonation(false);
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setReceiptData(null);
+    setDonationAmount("");
+  };
+
+  const handleDownloadReceipt = () => {
+    // Create a text version of the receipt
+    // const receiptText = `
+    // ========================================
+    //           DONATION RECEIPT
+    // ========================================
+    
+    // Receipt ID: ${receiptData.receiptId}
+    // Date: ${receiptData.date}
+    // Transaction ID: ${receiptData.transactionId}
+    
+    // ----------------------------------------
+    // CAMPAIGN DETAILS
+    // ----------------------------------------
+    // Campaign: ${receiptData.campaign.title}
+    // Creator: ${receiptData.campaign.creator}
+    
+    // ----------------------------------------
+    // DONATION DETAILS
+    // ----------------------------------------
+    // Donor: ${receiptData.donor}
+    // Payment Method: ${receiptData.paymentMethod}
+    // Anonymous: ${receiptData.isAnonymous ? 'Yes' : 'No'}
+    
+    // ----------------------------------------
+    // AMOUNT BREAKDOWN
+    // ----------------------------------------
+    // Donation Amount: $${receiptData.donation.amount.toFixed(2)}
+    // Elpis Tip: $${receiptData.donation.tip.toFixed(2)}
+    // Total: $${receiptData.donation.total.toFixed(2)}
+    
+    // ========================================
+    // Thank you for your generous donation!
+    // ========================================
+    // `;
+  
+    // Create download
+    // const blob = new Blob([receiptText], { type: 'text/plain' });
+    // const url = URL.createObjectURL(blob);
+    // const a = document.createElement('a');
+    // a.href = url;
+    // a.download = `receipt-${receiptData.receiptId}.txt`;
+    // document.body.appendChild(a);
+    // a.click();
+    // document.body.removeChild(a);
+    // URL.revokeObjectURL(url);
+
+    window.print();
+  };
+
+  const handlePrintReceipt = () => {
+    window.print();
   };
 
   return (
@@ -186,7 +283,7 @@ const CampaignDetail = ({ campaign, onBack }) => {
 
           {/* Action Buttons - Donate and Save */}
           <div className="flex gap-3 mb-6">
-            <button 
+            <button
               onClick={handleDonateClick}
               className="flex-1 py-3 bg-primary-green hover:bg-emerald-700 text-white font-black text-sm rounded-2xl transition-all cursor-pointer text-center active:scale-[0.98] shadow-sm flex items-center justify-center gap-2"
             >
@@ -235,7 +332,7 @@ const CampaignDetail = ({ campaign, onBack }) => {
 
       {/* Donation Process - Extends below when clicked */}
       {showDonation && (
-        <div 
+        <div
           ref={donationRef}
           className="mt-6 bg-white border border-brand-border/60 rounded-3xl p-6 animate-fadeIn"
         >
@@ -244,7 +341,7 @@ const CampaignDetail = ({ campaign, onBack }) => {
               AS
             </div>
             <div>
-              <p className="text-sm font-bold text-brand-text">Arjun Sharma</p>
+              <p className="text-sm font-bold text-brand-text">User Name</p>
               <p className="text-xs text-brand-secondary font-medium">Donor</p>
             </div>
           </div>
@@ -289,11 +386,10 @@ const CampaignDetail = ({ campaign, onBack }) => {
                   <button
                     key={method.id}
                     onClick={() => setSelectedPayment(method.id)}
-                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm font-semibold ${
-                      isSelected 
-                        ? "border-primary-green bg-emerald-50/50 text-primary-green" 
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm font-semibold ${isSelected
+                        ? "border-primary-green bg-emerald-50/50 text-primary-green"
                         : "border-brand-border/60 text-brand-secondary hover:border-brand-border"
-                    }`}
+                      }`}
                   >
                     <Icon size={16} />
                     <span>{method.label}</span>
@@ -326,7 +422,7 @@ const CampaignDetail = ({ campaign, onBack }) => {
                 className="mt-0.5 w-4 h-4 rounded border-brand-border/60 text-primary-green focus:ring-primary-green focus:ring-offset-2 cursor-pointer"
               />
               <span className="text-xs text-brand-secondary leading-relaxed">
-                Get occasional marketing updates from GoFundMe. You may unsubscribe at any time.
+                Show My name on receipt as well as on donors list..
               </span>
             </label>
           </div>
@@ -351,17 +447,134 @@ const CampaignDetail = ({ campaign, onBack }) => {
           </div>
 
           {/* Pay Button */}
-          <button 
+          <button
             onClick={handlePay}
             disabled={total === 0}
-            className={`w-full py-3.5 font-black text-sm rounded-2xl transition-all cursor-pointer text-center ${
-              total === 0 
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed" 
+            className={`w-full py-3.5 font-black text-sm rounded-2xl transition-all cursor-pointer text-center ${total === 0
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
                 : "bg-primary-green hover:bg-emerald-700 text-white active:scale-[0.98] shadow-sm"
-            }`}
+              }`}
           >
             Pay (${total.toFixed(1)})
           </button>
+        </div>
+      )}
+
+      {/* Mock Receipt Modal */}
+      {showReceipt && receiptData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {/* Receipt Header */}
+            <div className="sticky top-0 bg-white border-b border-brand-border/40 p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt size={20} className="text-primary-green" />
+                <h3 className="text-lg font-black text-brand-text">Donation Receipt</h3>
+              </div>
+              <button
+                onClick={handleCloseReceipt}
+                className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Success Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <CheckCircle size={32} className="text-primary-green" />
+                </div>
+              </div>
+
+              <p className="text-center text-sm font-semibold text-primary-green mb-6">
+                Payment Successful!
+              </p>
+
+              {/* Receipt Details */}
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Receipt ID</span>
+                  <span className="font-bold text-brand-text">{receiptData.receiptId}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Date</span>
+                  <span className="font-bold text-brand-text">{receiptData.date}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Transaction ID</span>
+                  <span className="font-bold text-brand-text text-xs">{receiptData.transactionId}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Campaign</span>
+                  <span className="font-bold text-brand-text text-right max-w-[60%]">{receiptData.campaign.title}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Creator</span>
+                  <span className="font-bold text-brand-text">{receiptData.campaign.creator}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Donor</span>
+                  <span className="font-bold text-brand-text">{receiptData.donor}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Payment Method</span>
+                  <span className="font-bold text-brand-text">{receiptData.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Anonymous</span>
+                  <span className="font-bold text-brand-text">{receiptData.isAnonymous ? 'Yes' : 'No'}</span>
+                </div>
+
+                {/* Amount Breakdown */}
+                <div className="bg-slate-50/80 rounded-xl p-4 mt-2">
+                  <p className="text-xs font-bold text-brand-text mb-2">Amount Breakdown</p>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-brand-secondary">Donation Amount</span>
+                      <span className="font-bold text-brand-text">${receiptData.donation.amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-brand-secondary">Elpis Tip</span>
+                      <span className="font-bold text-brand-text">${receiptData.donation.tip.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm pt-1.5 border-t border-brand-border/40">
+                      <span className="font-bold text-brand-text">Total</span>
+                      <span className="font-bold text-brand-text text-primary-green">${receiptData.donation.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex gap-2">
+                <button
+                  onClick={handleDownloadReceipt}
+                  className="flex-1 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-primary-green font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+                <button
+                  onClick={handlePrintReceipt}
+                  className="flex-1 py-2.5 border border-brand-border/60 hover:border-brand-border text-brand-text font-bold text-sm rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Printer size={16} />
+                  Print
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  handleCloseReceipt();
+                  // Return to campaigns
+                  onBack();
+                }}
+                className="w-full mt-2 py-2.5 bg-primary-green hover:bg-emerald-700 text-white font-black text-sm rounded-xl transition-all"
+              >
+                Done
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
