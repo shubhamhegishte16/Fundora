@@ -21,6 +21,7 @@ import {
   X,
   CheckCircle
 } from "lucide-react";
+import { toggleSaveCampaign } from "../../services/donorCampaignService.js";
 
 const CampaignDetail = ({ campaign, onBack }) => {
   const data = campaign;
@@ -85,6 +86,16 @@ const CampaignDetail = ({ campaign, onBack }) => {
         donationRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }, 100);
+  };
+
+  const handleSave = async () => {
+    try {
+      await toggleSaveCampaign(data.id);
+      alert("Campaign saved status updated!");
+    } catch (err) {
+      console.error("Failed to save campaign", err);
+      alert("Failed to update save status.");
+    }
   };
 
   const handlePay = () => {
@@ -290,7 +301,10 @@ const CampaignDetail = ({ campaign, onBack }) => {
               {showDonation ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               {showDonation ? "Close Donation" : "Donate"}
             </button>
-            <button className="flex-1 py-3 border border-[#059669] hover:bg-emerald-50/20 text-[#059669] font-black text-sm rounded-2xl transition-all cursor-pointer text-center bg-white active:scale-[0.98] flex items-center justify-center gap-2">
+            <button
+              onClick={handleSave}
+              className="flex-1 py-3 border border-[#059669] hover:bg-emerald-50/20 text-[#059669] font-black text-sm rounded-2xl transition-all cursor-pointer text-center bg-white active:scale-[0.98] flex items-center justify-center gap-2"
+            >
               <Bookmark size={16} />
               Save
             </button>

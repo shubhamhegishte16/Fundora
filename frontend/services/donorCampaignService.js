@@ -31,3 +31,23 @@ export const getAllActiveCampaigns = async () => {
         throw error;
     }
 };
+
+export const getSavedCampaigns = async () => {
+    try {
+        const response = await api.get('/donor/campaigns/saved');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching saved campaigns:', error);
+        throw error;
+    }
+};
+
+export const toggleSaveCampaign = async (id) => {
+    try {
+        const response = await api.post(`/donor/campaigns/${id}/save`);
+        return response.data;
+    } catch (error) {
+        console.error('Error saving campaign:', error);
+        throw error;
+    }
+};

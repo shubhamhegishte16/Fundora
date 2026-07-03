@@ -55,6 +55,11 @@ const donorProfileSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    savedCampaigns: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Campaign"
+    }],
   },
   {
     timestamps: true,

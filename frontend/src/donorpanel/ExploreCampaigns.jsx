@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { LayoutGrid, Heart, MapPin, Clock, Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import CampaignDetail from "./CampaignDetail";
-import { getAllActiveCampaigns } from "../../services/donorCampaignService.js";
+import { getAllActiveCampaigns, toggleSaveCampaign } from "../../services/donorCampaignService.js";
 
 const ExploreCampaigns = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,6 +34,18 @@ const ExploreCampaigns = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const handleSave = async (e, campId) => {
+    e.stopPropagation();
+    try {
+      await toggleSaveCampaign(campId);
+      // Optional: you could add a toast notification here
+      alert("Campaign saved successfully!");
+    } catch (err) {
+      console.error("Failed to save campaign", err);
+      alert("Failed to save campaign.");
+    }
+  };
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -127,7 +139,7 @@ const ExploreCampaigns = () => {
               {/* Action Buttons */}
               <div className="flex gap-3">
                 <button className="flex-1 py-2.5 bg-[#E1FDEC]/80 hover:bg-[#E1FDEC] text-[#059669] font-black text-sm rounded-2xl transition-all cursor-pointer text-center active:scale-[0.98]">View</button>
-                <button className="flex-1 py-2.5 border border-[#059669] hover:bg-emerald-50/20 text-[#059669] font-black text-sm rounded-2xl transition-all cursor-pointer text-center bg-white active:scale-[0.98]">Save</button>
+                <button onClick={(e) => handleSave(e, camp.id)} className="flex-1 py-2.5 border border-[#059669] hover:bg-emerald-50/20 text-[#059669] font-black text-sm rounded-2xl transition-all cursor-pointer text-center bg-white active:scale-[0.98]">Save</button>
               </div>
             </div>
           </div>
