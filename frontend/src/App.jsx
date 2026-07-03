@@ -11,8 +11,9 @@ import CreatorPanelApp from "./Creatorpanel/CreatorPanelApp";
 import DonorProfile from "./donorpanel/DonorProfile";
 import DonorReward from "./donorpanel/DonorRewardSection";
 import CampaignDetail from "./donorpanel/CampaignDetail";
+import DonorNotifications from "./donorpanel/donorNotifications.jsx";
 
-{/* Admin Imports*/}
+{/* Admin Imports*/ }
 import { AdminAuthProvider } from "./Adminpanel/context/AdminAuthContext";
 import ProtectedAdminRoute from "./Adminpanel/components/ProtectedAdminRoute";
 import AdminLayout from "./Adminpanel/layouts/AdminLayout";
@@ -43,12 +44,15 @@ function App() {
         <Route path="/donorprofile" element={<DonorProfile />} />
         <Route path="/donorreward" element={<DonorReward />} />
 
-        <Route path="/CampDetail" element={<CampaignDetail />}/>
+        <Route path="/CampDetail" element={<CampaignDetail />} />
+        <Route path="/donor-Notifications" element={<DonorNotifications />} />
+
 
         {/* Redirects */}
         <Route path="/donor-panel" element={<Navigate to="/donordashboard" replace />} />
         <Route path="/donor-profile" element={<Navigate to="/donorprofile" replace />} />
         <Route path="/donor-reward" element={<Navigate to="/donorreward" replace />} />
+        <Route path="/donor-Notifications" element={<Navigate to="/donor-Notifications" replace />} />
 
         {/* Creator */}
         <Route path="/creator-panel" element={<CreatorPanelApp />} />

@@ -17,6 +17,7 @@ import adminUserRoutes from "./routes/adminUserRoutes.js";
 import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
 import adminDonationRoutes from "./routes/adminDonationRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
+import MockDonationRoutes from './routes/MockDonationRoutes.js';
 // ...
 
 dotenv.config();
@@ -24,7 +25,10 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -48,6 +52,8 @@ app.use("/api/admin", adminUserRoutes);
 app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use("/api/admin/kyc", adminKycRoutes);
+
+app.use('/api', MockDonationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

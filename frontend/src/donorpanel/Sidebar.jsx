@@ -1,13 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, 
-  Search, 
-  HeartHandshake, 
-  Bookmark, 
-  Award, 
-  Users, 
-  Bell, 
+import {
+  LayoutDashboard,
+  Search,
+  HeartHandshake,
+  Bookmark,
+  Award,
+  Users,
+  Bell,
   Settings,
   ArrowRight
 } from "lucide-react";
@@ -30,17 +30,16 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
     <>
       {/* Mobile Sidebar Overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/40 lg:hidden backdrop-blur-xs"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
-      <aside className={`fixed lg:sticky top-0 left-0 z-50 lg:z-30 w-72 h-screen bg-card-white border-r border-brand-border/60 flex flex-col justify-between select-none transition-transform duration-300 lg:transform-none ${
-        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      }`}>
-        
+      <aside className={`fixed lg:sticky top-0 left-0 z-50 lg:z-30 w-72 h-screen bg-card-white border-r border-brand-border/60 flex flex-col justify-between select-none transition-transform duration-300 lg:transform-none ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}>
+
         {/* Solid Green Brand Panel */}
         <div className="bg-[#10B981] p-6 text-white flex flex-col justify-center min-h-[140px] shadow-sm relative">
           <div className="flex items-center justify-between">
@@ -49,8 +48,8 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
               <p className="text-xs uppercase tracking-widest text-[#D1FAE5] font-semibold mt-1">Donor Panel</p>
             </div>
             {/* Close button on mobile */}
-            <button 
-              onClick={() => setIsOpen(false)} 
+            <button
+              onClick={() => setIsOpen(false)}
               className="lg:hidden text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -72,9 +71,12 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
                 onClick={() => {
                   if (item.id === "Profile Settings") {
                     navigate("/donorprofile");
-                  } 
+                  }
                   else if (item.id === "Rewards & Badges") {
                     navigate("/donorreward");
+                  }
+                  else if (item.id === "Notifications") {
+                    navigate("/donor-Notifications");
                   }
                   else {
                     navigate(`/donordashboard?tab=${encodeURIComponent(item.id)}`);
@@ -82,11 +84,10 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
                   }
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all cursor-pointer ${
-                  isActive 
-                    ? "bg-[#D1FAE5]/60 text-[#059669] shadow-sm shadow-[#10B981]/5" 
+                className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-semibold tracking-wide transition-all cursor-pointer ${isActive
+                    ? "bg-[#D1FAE5]/60 text-[#059669] shadow-sm shadow-[#10B981]/5"
                     : "text-brand-secondary hover:text-brand-text hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <Icon size={18} className={isActive ? "text-[#059669]" : "text-brand-secondary"} />
                 <span>{item.label}</span>
@@ -97,13 +98,13 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
 
         {/* Reusable Bottom Sidebar Image Banner using downsidebar.jpg */}
         <div className="p-4 border-t border-brand-border/60">
-          <div 
+          <div
             className="relative rounded-2xl overflow-hidden aspect-[4/3] bg-cover bg-center flex flex-col justify-end p-5 text-white shadow-md group"
             style={{ backgroundImage: `url('/downsidebar.jpg')` }}
           >
             {/* Dark tint overlay for absolute readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-0 transition-opacity duration-300 group-hover:opacity-90" />
-            
+
             <div className="relative z-10 space-y-3">
               <div className="space-y-0.5 leading-tight font-black tracking-wide text-sm md:text-base">
                 <p className="text-white/90">Together,</p>

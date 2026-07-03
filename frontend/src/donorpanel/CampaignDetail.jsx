@@ -10,20 +10,19 @@ import {
   Bookmark,
   CreditCard,
   Smartphone,
-  Building,
   Check,
   ChevronDown,
   ChevronUp,
   Receipt,
   Download,
-  Mail,
   Printer,
   X,
   CheckCircle
 } from "lucide-react";
 import { toggleSaveCampaign } from "../../services/donorCampaignService.js";
+import { processDonation, getAllDonations, getCampaignDonations, getDonationByTransactionId, getCampaignStats } from "../../services/MockDonationServices.js";
 
-const CampaignDetail = ({ campaign, onBack }) => {
+const CampaignDetail = ({ campaign, onBack, onDonationComplete }) => {
   const data = campaign;
   const donationRef = useRef(null);
 
@@ -35,11 +34,45 @@ const CampaignDetail = ({ campaign, onBack }) => {
   const [receiveUpdates, setReceiveUpdates] = useState(true);
   const [showReceipt, setShowReceipt] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [campaignData, setCampaignData] = useState(data);
+  const [user, setUser] = useState(null);
 
   // Safe fallback for numbers
   const safeNumber = (value, fallback = 0) => {
     return value !== undefined && value !== null ? value : fallback;
   };
+
+  const refreshCampaignStats = async () => {
+    try {
+      const response = await getCampaignStats(data.id);
+      if (response.success && response.stats) {
+        setCampaignData(prev => ({
+          ...prev,
+          raised: response.stats.totalRaised || prev.raised || 0,
+          donorCount: response.stats.totalDonors || prev.donorCount || 0,
+          progress: response.stats.progress || prev.progress || 0
+        }));
+      }
+    } catch (error) {
+      console.error('Error refreshing stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Get user from localStorage on component mount
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        setUser(JSON.parse(userData));
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+    
+    refreshCampaignStats();
+  }, [data.id]);
 
   const formatCurrency = (amount) => {
     const safeAmount = safeNumber(amount, 0);
@@ -52,21 +85,10 @@ const CampaignDetail = ({ campaign, onBack }) => {
     return `₹${safeAmount.toLocaleString()}`;
   };
 
-  const formatUSD = (amount) => {
-    if (amount >= 100000) {
-      return `$${(amount / 100000).toFixed(1)}k`;
-    }
-    if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}k`;
-    }
-    return `$${amount.toLocaleString()}`;
-  };
-
   const calculateDonation = () => {
     const amount = parseFloat(donationAmount) || 0;
     const tip = amount * 0.05;
     const total = amount + tip;
-
     return { amount, tip, total };
   };
 
@@ -98,38 +120,75 @@ const CampaignDetail = ({ campaign, onBack }) => {
     }
   };
 
-  const handlePay = () => {
-    if (total === 0) return;
-
-    if (total <= 0) {
+  const handlePay = async () => {
+    if (total === 0) {
       alert("Amount must be more than 0");
       return;
     }
 
-    // Generate receipt data
-    const receipt = {
-      receiptId: `RCP-${Date.now().toString().slice(-8)}`,
-      date: new Date().toLocaleString(),
-      campaign: {
-        title: data.title,
-        creator: data.creator
-      },
-      donation: {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Get donor name from user
+      let donorName = "Anonymous";
+      if (!isAnonymous && user) {
+        donorName = user.name || user.displayName || user.fullName || "User";
+      }
+
+      const donationData = {
+        campaignId: data.id,
+        donorName: donorName,
+        donorEmail: user?.email || "user@example.com",
         amount: amount,
         tip: tip,
-        total: total
-      },
-      paymentMethod: selectedPayment,
-      isAnonymous: isAnonymous,
-      donor: isAnonymous ? "Anonymous Donor" : "User Name",
-      transactionId: `TXN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`
-    };
+        paymentMethod: selectedPayment,
+        isAnonymous: isAnonymous,
+        receiveUpdates: receiveUpdates
+      };
 
-    setReceiptData(receipt);
-    setShowReceipt(true);
+      console.log('📤 Sending donation:', donationData);
 
-    // Close donation section
-    setShowDonation(false);
+      const response = await processDonation(donationData);
+
+      console.log('📥 Full response:', response);
+      console.log('📄 Receipt data:', response.receipt);
+
+      if (response.success) {
+        // Update local campaign data immediately
+        setCampaignData(prev => {
+          const newRaised = (prev.raised || 0) + amount;
+          const newDonorCount = (prev.donorCount || 0) + 1;
+          const newProgress = Math.min(Math.round((newRaised / prev.goal) * 100), 100);
+          
+          return {
+            ...prev,
+            raised: newRaised,
+            donorCount: newDonorCount,
+            progress: newProgress
+          };
+        });
+
+        // Refresh stats from server
+        await refreshCampaignStats();
+
+        // Notify parent to refresh the campaign list
+        if (onDonationComplete) {
+          onDonationComplete();
+        }
+
+        // Set receipt data
+        setReceiptData(response.receipt);
+        setShowReceipt(true);
+        setShowDonation(false);
+        setDonationAmount("");
+      }
+    } catch (err) {
+      setError(err.message || 'Payment failed. Please try again.');
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseReceipt = () => {
@@ -139,52 +198,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
   };
 
   const handleDownloadReceipt = () => {
-    // Create a text version of the receipt
-    // const receiptText = `
-    // ========================================
-    //           DONATION RECEIPT
-    // ========================================
-    
-    // Receipt ID: ${receiptData.receiptId}
-    // Date: ${receiptData.date}
-    // Transaction ID: ${receiptData.transactionId}
-    
-    // ----------------------------------------
-    // CAMPAIGN DETAILS
-    // ----------------------------------------
-    // Campaign: ${receiptData.campaign.title}
-    // Creator: ${receiptData.campaign.creator}
-    
-    // ----------------------------------------
-    // DONATION DETAILS
-    // ----------------------------------------
-    // Donor: ${receiptData.donor}
-    // Payment Method: ${receiptData.paymentMethod}
-    // Anonymous: ${receiptData.isAnonymous ? 'Yes' : 'No'}
-    
-    // ----------------------------------------
-    // AMOUNT BREAKDOWN
-    // ----------------------------------------
-    // Donation Amount: $${receiptData.donation.amount.toFixed(2)}
-    // Elpis Tip: $${receiptData.donation.tip.toFixed(2)}
-    // Total: $${receiptData.donation.total.toFixed(2)}
-    
-    // ========================================
-    // Thank you for your generous donation!
-    // ========================================
-    // `;
-  
-    // Create download
-    // const blob = new Blob([receiptText], { type: 'text/plain' });
-    // const url = URL.createObjectURL(blob);
-    // const a = document.createElement('a');
-    // a.href = url;
-    // a.download = `receipt-${receiptData.receiptId}.txt`;
-    // document.body.appendChild(a);
-    // a.click();
-    // document.body.removeChild(a);
-    // URL.revokeObjectURL(url);
-
     window.print();
   };
 
@@ -192,9 +205,23 @@ const CampaignDetail = ({ campaign, onBack }) => {
     window.print();
   };
 
+  const displayData = campaignData;
+
+  // Get user display name
+  const getUserDisplayName = () => {
+    if (!user) return "User";
+    return user.name || user.displayName || user.fullName || "User";
+  };
+
+  // Get user initials for avatar
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const name = user.name || user.displayName || user.fullName || "User";
+    return name.charAt(0).toUpperCase();
+  };
+
   return (
     <div className="animate-fadeIn max-w-4xl mx-auto">
-      {/* Back Button */}
       <button
         onClick={onBack}
         className="flex items-center gap-2 text-brand-secondary hover:text-brand-text transition-colors mb-4 font-semibold text-sm"
@@ -203,12 +230,17 @@ const CampaignDetail = ({ campaign, onBack }) => {
         Back to Campaigns
       </button>
 
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium animate-shake">
+          ❌ {error}
+        </div>
+      )}
+
       <div className="bg-white border border-brand-border/60 rounded-3xl overflow-hidden">
-        {/* Campaign Image */}
         <div className="relative h-64 w-full overflow-hidden">
           <img
-            src={data.image}
-            alt={data.title}
+            src={displayData.image}
+            alt={displayData.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute top-4 right-4 flex gap-2">
@@ -221,78 +253,75 @@ const CampaignDetail = ({ campaign, onBack }) => {
           </div>
         </div>
 
-        {/* Campaign Content */}
         <div className="p-6">
-          {/* Title & Creator Section */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
             <div>
               <h2 className="text-2xl font-black text-brand-text leading-tight">
-                {data.title || "Campaign Title"}
+                {displayData.title || "Campaign Title"}
               </h2>
               <p className="text-sm text-brand-secondary font-medium mt-1">
-                By {data.creator || "Unknown Creator"}
+                By {displayData.creator || "Unknown Creator"}
               </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-primary-green font-black text-base">
-                {data.creatorInitials || "?"}
+                {displayData.creatorInitials || "?"}
               </div>
               <div>
-                <p className="text-sm font-bold text-brand-text">{data.creator || "Unknown"}</p>
+                <p className="text-sm font-bold text-brand-text">{displayData.creator || "Unknown"}</p>
                 <p className="text-xs text-brand-secondary font-medium flex items-center gap-1">
                   <MapPin size={12} />
-                  {data.creatorLocation || "Location"}
+                  {displayData.creatorLocation || "Location"}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Description */}
           <p className="text-sm text-brand-secondary leading-relaxed mb-6 max-w-3xl">
-            {data.description || "No description available."}
+            {displayData.description || "No description available."}
           </p>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-4 gap-3 mb-6">
-            <div className="bg-slate-50/80 rounded-xl p-3 text-center">
-              <p className="text-lg font-black text-brand-text">{formatCurrency(data.raised)}</p>
+            <div className="bg-slate-50/80 rounded-xl p-3 text-center transition-all hover:scale-105">
+              <p className="text-lg font-black text-brand-text">{formatCurrency(displayData.raised)}</p>
               <p className="text-xs font-semibold text-brand-secondary">raised</p>
             </div>
-            <div className="bg-slate-50/80 rounded-xl p-3 text-center">
-              <p className="text-lg font-black text-brand-text">{formatCurrency(data.goal)}</p>
+            <div className="bg-slate-50/80 rounded-xl p-3 text-center transition-all hover:scale-105">
+              <p className="text-lg font-black text-brand-text">{formatCurrency(displayData.goal)}</p>
               <p className="text-xs font-semibold text-brand-secondary">goal</p>
             </div>
-            <div className="bg-slate-50/80 rounded-xl p-3 text-center">
-              <p className="text-lg font-black text-brand-text">{safeNumber(data.progress, 0)}%</p>
+            <div className="bg-slate-50/80 rounded-xl p-3 text-center transition-all hover:scale-105">
+              <p className="text-lg font-black text-brand-text">{safeNumber(displayData.progress, 0)}%</p>
               <p className="text-xs font-semibold text-brand-secondary">funded</p>
             </div>
-            <div className="bg-slate-50/80 rounded-xl p-3 text-center">
+            <div className="bg-slate-50/80 rounded-xl p-3 text-center transition-all hover:scale-105">
               <p className="text-lg font-black text-brand-text flex items-center justify-center gap-0.5">
-                {safeNumber(data.daysLeft, 0)}
+                {safeNumber(displayData.daysLeft, 0)}
                 <span className="text-xs font-bold text-brand-secondary">d</span>
               </p>
               <p className="text-xs font-semibold text-brand-secondary">left</p>
             </div>
           </div>
 
-          {/* Progress Bar */}
           <div className="mb-6">
             <div className="w-full bg-[#E1FDEC]/40 h-2 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary-green rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(safeNumber(data.progress, 0), 100)}%` }}
+                className="h-full bg-primary-green rounded-full transition-all duration-1000 ease-out"
+                style={{ 
+                  width: `${Math.min(safeNumber(displayData.progress, 0), 100)}%`,
+                  transition: 'width 1s cubic-bezier(0.22, 1, 0.36, 1)'
+                }}
               />
             </div>
             <div className="flex justify-between text-xs font-semibold text-brand-secondary mt-1.5">
-              <span className="text-primary-green">{safeNumber(data.progress, 0)}% funded</span>
+              <span className="text-primary-green">{safeNumber(displayData.progress, 0)}% funded</span>
               <span className="flex items-center gap-1">
                 <Calendar size={13} />
-                {safeNumber(data.daysLeft, 0)} days left
+                {safeNumber(displayData.daysLeft, 0)} days left
               </span>
             </div>
           </div>
 
-          {/* Action Buttons - Donate and Save */}
           <div className="flex gap-3 mb-6">
             <button
               onClick={handleDonateClick}
@@ -310,18 +339,17 @@ const CampaignDetail = ({ campaign, onBack }) => {
             </button>
           </div>
 
-          {/* Creator Section */}
           <div className="border-t border-brand-border/40 pt-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-primary-green font-black text-sm">
-                  {data.creatorInitials || "?"}
+                  {displayData.creatorInitials || "?"}
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-brand-text">{data.creator || "Unknown"}</p>
+                  <p className="text-sm font-bold text-brand-text">{displayData.creator || "Unknown"}</p>
                   <p className="text-xs text-brand-secondary font-medium flex items-center gap-1">
                     <MapPin size={12} />
-                    {data.creatorLocation || "Location"}
+                    {displayData.creatorLocation || "Location"}
                   </p>
                 </div>
                 <button className="flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-primary-green font-bold text-sm rounded-xl transition-all ml-2">
@@ -332,11 +360,11 @@ const CampaignDetail = ({ campaign, onBack }) => {
               <div className="flex items-center gap-6 text-sm">
                 <span className="font-semibold text-brand-secondary flex items-center gap-1.5">
                   <Users size={16} className="text-primary-green" />
-                  {safeNumber(data.donorCount, 0).toLocaleString()} donors
+                  {safeNumber(displayData.donorCount, 0).toLocaleString()} donors
                 </span>
                 <span className="font-semibold text-brand-secondary flex items-center gap-1.5">
                   <Heart size={16} className="text-primary-green fill-primary-green" />
-                  {safeNumber(data.followers, 0).toLocaleString()} followers
+                  {safeNumber(displayData.followers, 0).toLocaleString()} followers
                 </span>
               </div>
             </div>
@@ -344,7 +372,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
         </div>
       </div>
 
-      {/* Donation Process - Extends below when clicked */}
       {showDonation && (
         <div
           ref={donationRef}
@@ -352,23 +379,24 @@ const CampaignDetail = ({ campaign, onBack }) => {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-primary-green font-black text-sm">
-              AS
+              {isAnonymous ? 'A' : getUserInitials()}
             </div>
             <div>
-              <p className="text-sm font-bold text-brand-text">User Name</p>
+              <p className="text-sm font-bold text-brand-text">
+                {isAnonymous ? 'Anonymous' : getUserDisplayName()}
+              </p>
               <p className="text-xs text-brand-secondary font-medium">Donor</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-2xl font-black text-primary-green">{data.progress}%</span>
-            <h3 className="text-lg font-black text-brand-text">{data.title}</h3>
+            <span className="text-2xl font-black text-primary-green">{displayData.progress}%</span>
+            <h3 className="text-lg font-black text-brand-text">{displayData.title}</h3>
           </div>
           <p className="text-sm text-brand-secondary mb-4">
-            Still ${(data.goal - data.raised).toLocaleString()} to go. Help us build momentum.
+            Still ${(displayData.goal - displayData.raised).toLocaleString()} to go. Help us build momentum.
           </p>
 
-          {/* Donation Input */}
           <div className="mb-6">
             <label className="block text-sm font-bold text-brand-text mb-2">
               Enter your Donation:
@@ -387,7 +415,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
             </div>
           </div>
 
-          {/* Payment Methods */}
           <div className="mb-6">
             <label className="block text-sm font-bold text-brand-text mb-3">
               Payment Method:
@@ -401,9 +428,9 @@ const CampaignDetail = ({ campaign, onBack }) => {
                     key={method.id}
                     onClick={() => setSelectedPayment(method.id)}
                     className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-sm font-semibold ${isSelected
-                        ? "border-primary-green bg-emerald-50/50 text-primary-green"
-                        : "border-brand-border/60 text-brand-secondary hover:border-brand-border"
-                      }`}
+                      ? "border-primary-green bg-emerald-50/50 text-primary-green"
+                      : "border-brand-border/60 text-brand-secondary hover:border-brand-border"
+                    }`}
                   >
                     <Icon size={16} />
                     <span>{method.label}</span>
@@ -414,7 +441,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
             </div>
           </div>
 
-          {/* Checkboxes */}
           <div className="space-y-3 mb-6">
             <label className="flex items-start gap-3 cursor-pointer group">
               <input
@@ -436,12 +462,11 @@ const CampaignDetail = ({ campaign, onBack }) => {
                 className="mt-0.5 w-4 h-4 rounded border-brand-border/60 text-primary-green focus:ring-primary-green focus:ring-offset-2 cursor-pointer"
               />
               <span className="text-xs text-brand-secondary leading-relaxed">
-                Show My name on receipt as well as on donors list..
+                Show My name on receipt as well as on donors list.
               </span>
             </label>
           </div>
 
-          {/* Donation Summary */}
           <div className="bg-slate-50/80 rounded-2xl p-4 mb-6">
             <h4 className="text-sm font-bold text-brand-text mb-3">Your Donation:</h4>
             <div className="space-y-2">
@@ -460,25 +485,22 @@ const CampaignDetail = ({ campaign, onBack }) => {
             </div>
           </div>
 
-          {/* Pay Button */}
           <button
             onClick={handlePay}
-            disabled={total === 0}
-            className={`w-full py-3.5 font-black text-sm rounded-2xl transition-all cursor-pointer text-center ${total === 0
-                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                : "bg-primary-green hover:bg-emerald-700 text-white active:scale-[0.98] shadow-sm"
-              }`}
+            disabled={total === 0 || loading}
+            className={`w-full py-3.5 font-black text-sm rounded-2xl transition-all cursor-pointer text-center ${total === 0 || loading
+              ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+              : "bg-primary-green hover:bg-emerald-700 text-white active:scale-[0.98] shadow-sm"
+            }`}
           >
-            Pay (${total.toFixed(1)})
+            {loading ? 'Processing...' : `Pay ($${total.toFixed(1)})`}
           </button>
         </div>
       )}
 
-      {/* Mock Receipt Modal */}
       {showReceipt && receiptData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            {/* Receipt Header */}
             <div className="sticky top-0 bg-white border-b border-brand-border/40 p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt size={20} className="text-primary-green" />
@@ -493,7 +515,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
             </div>
 
             <div className="p-6">
-              {/* Success Icon */}
               <div className="flex justify-center mb-4">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
                   <CheckCircle size={32} className="text-primary-green" />
@@ -501,65 +522,86 @@ const CampaignDetail = ({ campaign, onBack }) => {
               </div>
 
               <p className="text-center text-sm font-semibold text-primary-green mb-6">
-                Payment Successful!
+                Payment Successful! 🎉
               </p>
 
-              {/* Receipt Details */}
               <div className="space-y-4">
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Receipt ID</span>
-                  <span className="font-bold text-brand-text">{receiptData.receiptId}</span>
+                  <span className="font-bold text-brand-text">{receiptData.receiptId || 'N/A'}</span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Date</span>
-                  <span className="font-bold text-brand-text">{receiptData.date}</span>
+                  <span className="font-bold text-brand-text">{receiptData.date || new Date().toLocaleString()}</span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Transaction ID</span>
-                  <span className="font-bold text-brand-text text-xs">{receiptData.transactionId}</span>
+                  <span className="font-bold text-brand-text text-xs">{receiptData.transactionId || 'N/A'}</span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Campaign</span>
-                  <span className="font-bold text-brand-text text-right max-w-[60%]">{receiptData.campaign.title}</span>
+                  <span className="font-bold text-brand-text text-right max-w-[60%]">
+                    {receiptData.campaign?.title || 'Unknown Campaign'}
+                  </span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Creator</span>
-                  <span className="font-bold text-brand-text">{receiptData.campaign.creator}</span>
+                  <span className="font-bold text-brand-text">
+                    {receiptData.campaign?.creator || 'Unknown Creator'}
+                  </span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Donor</span>
-                  <span className="font-bold text-brand-text">{receiptData.donor}</span>
+                  <span className="font-bold text-brand-text">
+                    {receiptData.isAnonymous ? 'Anonymous Donor' : (receiptData.donor || getUserDisplayName())}
+                  </span>
                 </div>
+
+                <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
+                  <span className="text-brand-secondary">Email</span>
+                  <span className="font-bold text-brand-text text-xs">{receiptData.donorEmail || user?.email || 'N/A'}</span>
+                </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Payment Method</span>
-                  <span className="font-bold text-brand-text">{receiptData.paymentMethod}</span>
+                  <span className="font-bold text-brand-text">{receiptData.paymentMethod || 'Google Pay'}</span>
                 </div>
+
                 <div className="flex justify-between text-sm border-b border-brand-border/40 pb-2">
                   <span className="text-brand-secondary">Anonymous</span>
                   <span className="font-bold text-brand-text">{receiptData.isAnonymous ? 'Yes' : 'No'}</span>
                 </div>
 
-                {/* Amount Breakdown */}
-                <div className="bg-slate-50/80 rounded-xl p-4 mt-2">
+                <div className="bg-emerald-50/50 rounded-xl p-4 mt-2 border border-emerald-100">
                   <p className="text-xs font-bold text-brand-text mb-2">Amount Breakdown</p>
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-sm">
                       <span className="text-brand-secondary">Donation Amount</span>
-                      <span className="font-bold text-brand-text">${receiptData.donation.amount.toFixed(2)}</span>
+                      <span className="font-bold text-brand-text">
+                        ${(receiptData.donation?.amount || 0).toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-brand-secondary">Elpis Tip</span>
-                      <span className="font-bold text-brand-text">${receiptData.donation.tip.toFixed(2)}</span>
+                      <span className="font-bold text-brand-text">
+                        ${(receiptData.donation?.tip || 0).toFixed(2)}
+                      </span>
                     </div>
-                    <div className="flex justify-between text-sm pt-1.5 border-t border-brand-border/40">
+                    <div className="flex justify-between text-sm pt-1.5 border-t border-emerald-200">
                       <span className="font-bold text-brand-text">Total</span>
-                      <span className="font-bold text-brand-text text-primary-green">${receiptData.donation.total.toFixed(2)}</span>
+                      <span className="font-bold text-brand-text text-primary-green text-lg">
+                        ${(receiptData.donation?.total || 0).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="mt-6 flex gap-2">
                 <button
                   onClick={handleDownloadReceipt}
@@ -580,8 +622,6 @@ const CampaignDetail = ({ campaign, onBack }) => {
               <button
                 onClick={() => {
                   handleCloseReceipt();
-                  // Return to campaigns
-                  onBack();
                 }}
                 className="w-full mt-2 py-2.5 bg-primary-green hover:bg-emerald-700 text-white font-black text-sm rounded-xl transition-all"
               >
