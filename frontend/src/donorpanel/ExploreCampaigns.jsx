@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LayoutGrid, Heart, MapPin, Clock, Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import CampaignDetail from "./CampaignDetail";
+import { getAllActiveCampaigns } from "../../services/donorCampaignService.js";
 
 const ExploreCampaigns = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,15 +31,27 @@ const ExploreCampaigns = () => {
     { key: "timing", icon: Calendar, fill: false }
   ];
 
-  // Sample Campaign data from Figma mockup
-  const campaigns = [
-    { id: 1, title: "Empower Rural Education", creator: "Teach India", progress: 65, daysLeft: 15, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&auto=format&fit=crop" },
-    { id: 2, title: "Clean Water for All", creator: "Water For Life", progress: 70, daysLeft: 10, raised: "₹7,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1512069772995-ec65ed45afd6?w=500&auto=format&fit=crop" },
-    { id: 3, title: "Support Cancer Patients", creator: "Hope Foundation", progress: 40, daysLeft: 30, raised: "₹4,00,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?w=500&auto=format&fit=crop" },
-    { id: 4, title: "Animal Shelter Care", creator: "Paws & Hearts", progress: 65, daysLeft: 15, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500&auto=format&fit=crop" },
-    { id: 5, title: "Plant Trees Save Earth", creator: "Green Future", progress: 80, daysLeft: 5, raised: "₹8,00,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=500&auto=format&fit=crop" },
-    { id: 6, title: "Flood Relief Support", creator: "Helping Hands", progress: 60, daysLeft: 25, raised: "₹6,50,000", goal: "₹10,00,000", image: "https://images.unsplash.com/photo-1547683905-f686c993aae5?w=500&auto=format&fit=crop" }
-  ];
+  const [campaigns, setCampaigns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        setLoading(true);
+        const res = await getAllActiveCampaigns();
+        if (res.success && res.data) {
+          setCampaigns(res.data);
+        }
+      } catch (err) {
+        setError("Failed to load campaigns.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCampaigns();
+  }, []);
 
   if (selectedCampaign) {
     return <CampaignDetail campaign={selectedCampaign} onBack={() => setSelectedCampaign(null)} />;
@@ -67,7 +80,17 @@ const ExploreCampaigns = () => {
         ))}
       </div>
 
-      {/* Campaigns Grid */}
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin h-10 w-10 border-4 border-[#10B981] border-t-transparent rounded-full" />
+        </div>
+      ) : error ? (
+        <div className="text-center text-brand-error font-semibold py-10">{error}</div>
+      ) : campaigns.length === 0 ? (
+        <div className="text-center text-brand-secondary font-semibold py-10">No campaigns found.</div>
+      ) : (
+        <>
+          {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {campaigns.map((camp) => (
           <div key={camp.id} className="bg-white border border-brand-border/60 rounded-3xl overflow-hidden hover:border-brand-border/80 transition-all hover:shadow-md flex flex-col group" onClick={() => setSelectedCampaign(camp)}>
@@ -97,8 +120,8 @@ const ExploreCampaigns = () => {
 
               {/* Raised vs Goal Info */}
               <div className="flex items-center justify-between text-xs font-bold text-brand-secondary mb-5">
-                <div><span className="text-brand-text font-black text-sm">{camp.raised}</span> raised</div>
-                <div className="text-right"><span className="text-brand-text font-black text-sm">{camp.goal}</span> Goal</div>
+                <div><span className="text-brand-text font-black text-sm">{typeof camp.raised === 'number' ? `₹${camp.raised.toLocaleString('en-IN')}` : camp.raised}</span> raised</div>
+                <div className="text-right"><span className="text-brand-text font-black text-sm">{typeof camp.goal === 'number' ? `₹${camp.goal.toLocaleString('en-IN')}` : camp.goal}</span> Goal</div>
               </div>
 
               {/* Action Buttons */}
@@ -121,6 +144,8 @@ const ExploreCampaigns = () => {
 
         <button onClick={() => setCurrentPage(prev => Math.min(5, prev + 1))} className="w-8 h-8 rounded-lg border border-brand-border/60 text-brand-secondary hover:bg-slate-50 flex items-center justify-center cursor-pointer transition-all active:scale-95"><ChevronRight size={16} /></button>
       </div>
+      </>
+      )}
     </div>
   );
 };

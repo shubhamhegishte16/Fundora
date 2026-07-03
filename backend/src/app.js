@@ -11,6 +11,7 @@ import donorProfileRoute from "./routes/donorProfileRoute.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
 import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
 import donorDashboardRoutes from "./routes/donorDashboardRoutes.js";
+import donorCampaignRoutes from "./routes/donorCampaignRoutes.js";
 
 dotenv.config();
 
@@ -39,6 +40,7 @@ app.use("/api/admin/campaigns", adminCampaignRoutes);
 
 app.use("/api/donor", donorProfileRoute);
 app.use("/api/donor/dashboard", donorDashboardRoutes);
+app.use("/api/donor/campaigns", donorCampaignRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
