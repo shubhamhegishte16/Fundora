@@ -5,13 +5,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/authRoutes.js';
 import creatorAuthRoutes from './routes/creatorAuthRoutes.js';
-import adminUserRoutes from './routes/adminUserRoutes.js';
 import adminAuthRoutes from './routes/adminAuthRoutes.js';
 import donorProfileRoute from "./routes/donorProfileRoute.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
-import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
-import donorDashboardRoutes from "./routes/donorDashboardRoutes.js";
-import donorCampaignRoutes from "./routes/donorCampaignRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import donationRoutes from "./routes/donationRoutes.js";
+// ...
 
 dotenv.config();
 
@@ -31,16 +30,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/creator/auth', creatorAuthRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
-
-app.use('/api/admin', adminUserRoutes);
-
-
 app.use("/api/creator/campaigns", campaignRoutes);
-app.use("/api/admin/campaigns", adminCampaignRoutes);
-
+app.use("/api/creator/dashboard", dashboardRoutes);
+app.use("/api/creator/donations", donationRoutes);
 app.use("/api/donor", donorProfileRoute);
-app.use("/api/donor/dashboard", donorDashboardRoutes);
-app.use("/api/donor/campaigns", donorCampaignRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
