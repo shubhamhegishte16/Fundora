@@ -60,6 +60,33 @@ const creatorSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // --- Added for the admin "KYC Verification" panel ---
+    kycStatus: {
+      type: String,
+      enum: ['pending', 'verified', 'rejected'],
+      default: 'pending',
+    },
+    kycRejectionReason: {
+      type: String,
+      default: null,
+    },
+    kycReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Admin',
+      default: null,
+    },
+    kycReviewedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // --- Added for the admin "Manage Users / Fraud" panels ---
+    status: {
+      type: String,
+      enum: ['active', 'suspended'],
+      default: 'active',
+    },
   },
   {
     timestamps: true,

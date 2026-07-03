@@ -1,6 +1,8 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./LandingPage"; // ← new landing page
+import BrowseNoLogin from "./BrowseNoLogin";
+
 
 import SignupFlow from "./components/SignupFlow";
 import LoginFlow from "./components/LoginFlow";
@@ -32,6 +34,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/browse" element={<BrowseNoLogin />} />
         <Route path="/signup" element={<SignupFlow />} />
         <Route path="/login" element={<LoginFlow />} />
 

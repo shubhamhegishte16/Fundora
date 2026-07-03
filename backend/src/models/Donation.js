@@ -21,6 +21,22 @@ const donationSchema = new mongoose.Schema(
     isAnonymous: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'completed', 'refunded'], default: 'completed', index: true },
     message: { type: String, trim: true, maxlength: 500 },
+
+    // --- Added for the admin "Donations" panel ---
+    method: {
+      type: String,
+      enum: ['UPI', 'Card', 'Net Banking', 'NEFT', 'Wallet', 'Other'],
+      default: 'UPI',
+    },
+    // Set when an admin refunds a completed donation (status -> 'refunded').
+    refundedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
+    refundedAt: { type: Date, default: null },
+    refundReason: { type: String, default: null },
+
+    // Set the first time this donation gets swept up by a fraud heuristic
+    // or manually flagged by an admin. Kept lightweight here — full detail
+    // lives on the FraudAlert document itself.
+    isFlagged: { type: Boolean, default: false, index: true },
   },
   { timestamps: true }
 );

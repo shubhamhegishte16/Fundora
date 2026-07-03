@@ -1,54 +1,40 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Users, Megaphone, HandCoins, Clock,
-  ArrowUpRight, ArrowDownRight, MoreHorizontal
+  ArrowUpRight, ArrowDownRight, MoreHorizontal, Loader2
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 
-const stats = [
-  { label: "Total Users", value: "12,482", change: "+8.2%", up: true, icon: Users },
-  { label: "Active Campaigns", value: "348", change: "+3.1%", up: true, icon: Megaphone },
-  { label: "Total Donations", value: "₹48.3L", change: "+12.4%", up: true, icon: HandCoins },
-  { label: "Pending Reviews", value: "27", change: "-5.0%", up: false, icon: Clock },
-];
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const getToken = () => localStorage.getItem("adminToken");
 
-const areaData = [
-  { month: "Feb", donations: 320000 },
-  { month: "Mar", donations: 410000 },
-  { month: "Apr", donations: 390000 },
-  { month: "May", donations: 520000 },
-  { month: "Jun", donations: 480000 },
-  { month: "Jul", donations: 610000 },
-];
+async function apiRequest(path) {
+  const res = await fetch(`${API_BASE}/api/admin${path}`, {
+    headers: { Authorization: `Bearer ${getToken()}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === false) {
+    throw new Error(data.message || `Request failed (${res.status})`);
+  }
+  return data;
+}
 
-const categoryData = [
-  { name: "Education", value: 34 },
-  { name: "Healthcare", value: 22 },
-  { name: "Environment", value: 18 },
-  { name: "Social", value: 16 },
-  { name: "Startup", value: 10 },
-];
+const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+const inrCompact = (n) => {
+  const v = Number(n || 0);
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
+  return `₹${v.toLocaleString("en-IN")}`;
+};
+
 const PIE_COLORS = ["#1B4332", "#2D6A4F", "#52B788", "#95D5B2", "#B7E4C7"];
 
-const recentCampaigns = [
-  { name: "Build Green School", creator: "Ananya S.", category: "Education", raised: "₹1,85,000", goal: "₹2,50,000", pct: 74, status: "Active" },
-  { name: "Help Rural Hospital", creator: "Meera I.", category: "Healthcare", raised: "₹1,04,000", goal: "₹1,30,000", pct: 80, status: "Active" },
-  { name: "Clean Water Initiative", creator: "Pooja K.", category: "Environment", raised: "₹45,000", goal: "₹1,50,000", pct: 30, status: "Pending" },
-  { name: "Support Women Entrepreneurs", creator: "Arjun N.", category: "Social", raised: "₹92,000", goal: "₹1,00,000", pct: 92, status: "Pending" },
-];
-
-const recentDonations = [
-  { donor: "Ananya Sharma", campaign: "Build Green School", amount: "₹2,000", time: "2 hr ago", avatar: "AS" },
-  { donor: "Anonymous", campaign: "Help Rural Hospital", amount: "₹3,000", time: "5 hr ago", avatar: "??" },
-  { donor: "Karan Mehta", campaign: "Clean Water Initiative", amount: "₹1,500", time: "1 day ago", avatar: "KM" },
-];
-
 const StatusPill = ({ status }) => {
-  const s = { Active: "bg-emerald-50 text-emerald-600", Pending: "bg-amber-50 text-amber-600" };
-  return <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium ${s[status] || "bg-gray-50 text-gray-500"}`}>{status}</span>;
+  const s = { active: "bg-emerald-50 text-emerald-600", pending_review: "bg-amber-50 text-amber-600", Active: "bg-emerald-50 text-emerald-600", Pending: "bg-amber-50 text-amber-600" };
+  const label = status === "pending_review" ? "Pending" : status?.charAt(0).toUpperCase() + status?.slice(1);
+  return <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-medium ${s[status] || "bg-gray-50 text-gray-500"}`}>{label}</span>;
 };
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -64,6 +50,62 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState(null);
+  const [areaData, setAreaData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [recentCampaigns, setRecentCampaigns] = useState([]);
+  const [recentDonations, setRecentDonations] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError("");
+      try {
+        const [statsRes, trendRes, catRes, campRes, donRes] = await Promise.all([
+          apiRequest("/dashboard/stats"),
+          apiRequest("/dashboard/donation-trend?months=6"),
+          apiRequest("/dashboard/category-breakdown"),
+          apiRequest("/dashboard/recent-campaigns?limit=4"),
+          apiRequest("/dashboard/recent-donations?limit=3"),
+        ]);
+        if (cancelled) return;
+        setStats(statsRes.stats);
+        setAreaData(trendRes.trend || []);
+        setCategoryData(catRes.breakdown || []);
+        setRecentCampaigns(campRes.campaigns || []);
+        setRecentDonations(donRes.donations || []);
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Failed to load dashboard");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const statCards = stats ? [
+    { label: "Total Users", value: stats.totalUsers.value.toLocaleString("en-IN"), change: `${stats.totalUsers.change}%`, up: stats.totalUsers.up, icon: Users },
+    { label: "Active Campaigns", value: stats.activeCampaigns.value.toLocaleString("en-IN"), change: `${stats.activeCampaigns.change}%`, up: stats.activeCampaigns.up, icon: Megaphone },
+    { label: "Total Donations", value: inrCompact(stats.totalDonations.value), change: `${stats.totalDonations.change}%`, up: stats.totalDonations.up, icon: HandCoins },
+    { label: "Pending Reviews", value: String(stats.pendingReviews.value), change: `${stats.pendingReviews.campaigns} campaigns · ${stats.pendingReviews.kyc} KYC`, up: true, icon: Clock },
+  ] : [];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400 gap-2">
+        <Loader2 className="w-5 h-5 animate-spin" /> Loading dashboard...
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-5 bg-red-50 text-red-600 rounded-xl text-sm">{error}</div>;
+  }
+
   return (
     <div className="space-y-5 max-w-7xl">
       {/* Header */}
@@ -74,7 +116,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        {stats.map((s) => (
+        {statCards.map((s) => (
           <div key={s.label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between mb-3">
               <div className="w-9 h-9 rounded-xl bg-[#F0F7F4] flex items-center justify-center">
@@ -125,7 +167,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={150}>
             <PieChart>
               <Pie data={categoryData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} dataKey="value" paddingAngle={2} strokeWidth={0}>
-                {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                {categoryData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
               </Pie>
               <Tooltip formatter={(v) => [`${v}%`]} contentStyle={{ borderRadius: 10, fontSize: 12, border: "1px solid #f0f0f0" }} />
             </PieChart>
@@ -134,7 +176,7 @@ export default function Dashboard() {
             {categoryData.map((c, i) => (
               <div key={c.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i] }} />
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />
                   <span className="text-[12px] text-gray-500">{c.name}</span>
                 </div>
                 <span className="text-[12px] font-semibold text-gray-700">{c.value}%</span>
@@ -154,7 +196,7 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-gray-50">
             {recentCampaigns.map((c) => (
-              <div key={c.name} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
+              <div key={c.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-medium text-gray-700 text-[13px] truncate">{c.name}</p>
@@ -165,14 +207,17 @@ export default function Dashboard() {
                 <div className="text-right flex-shrink-0 w-32">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#52B788] rounded-full" style={{ width: `${c.pct}%` }} />
+                      <div className="h-full bg-[#52B788] rounded-full" style={{ width: `${c.pct || 0}%` }} />
                     </div>
-                    <span className="text-[11px] text-gray-400 w-6 text-right">{c.pct}%</span>
+                    <span className="text-[11px] text-gray-400 w-6 text-right">{c.pct || 0}%</span>
                   </div>
-                  <p className="text-[11px] text-gray-400">{c.raised} of {c.goal}</p>
+                  <p className="text-[11px] text-gray-400">{inr(c.raised)} of {inr(c.goal)}</p>
                 </div>
               </div>
             ))}
+            {recentCampaigns.length === 0 && (
+              <p className="px-5 py-6 text-center text-[12px] text-gray-400">No campaigns yet</p>
+            )}
           </div>
         </div>
 
@@ -184,7 +229,7 @@ export default function Dashboard() {
           </div>
           <div className="divide-y divide-gray-50">
             {recentDonations.map((d) => (
-              <div key={d.donor} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
+              <div key={d.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition-colors">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0 ${d.avatar === "??" ? "bg-gray-300" : "bg-gradient-to-br from-[#2D6A4F] to-[#52B788]"}`}>
                   {d.avatar}
                 </div>
@@ -193,11 +238,14 @@ export default function Dashboard() {
                   <p className="text-[11px] text-gray-400 truncate">{d.campaign}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-[13px] font-bold text-[#2D6A4F]">{d.amount}</p>
+                  <p className="text-[13px] font-bold text-[#2D6A4F]">{inr(d.amount)}</p>
                   <p className="text-[11px] text-gray-400">{d.time}</p>
                 </div>
               </div>
             ))}
+            {recentDonations.length === 0 && (
+              <p className="px-5 py-6 text-center text-[12px] text-gray-400">No donations yet</p>
+            )}
           </div>
 
           {/* Quick actions */}

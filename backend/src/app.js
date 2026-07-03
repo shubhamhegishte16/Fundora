@@ -10,6 +10,13 @@ import donorProfileRoute from "./routes/donorProfileRoute.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import donationRoutes from "./routes/donationRoutes.js";
+import donorCampaignRoutes from "./routes/donorCampaignRoutes.js";
+import donorDashboardRoutes from "./routes/donorDashboardRoutes.js";
+import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
+import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
+import adminDonationRoutes from "./routes/adminDonationRoutes.js";
+import adminKycRoutes from "./routes/adminKycRoutes.js";
 // ...
 
 dotenv.config();
@@ -34,6 +41,13 @@ app.use("/api/creator/campaigns", campaignRoutes);
 app.use("/api/creator/dashboard", dashboardRoutes);
 app.use("/api/creator/donations", donationRoutes);
 app.use("/api/donor", donorProfileRoute);
+app.use("/api/donor/campaigns", donorCampaignRoutes);
+app.use("/api/donor/dashboard", donorDashboardRoutes);
+app.use("/api/admin/campaigns", adminCampaignRoutes);
+app.use("/api/admin", adminUserRoutes);
+app.use("/api/admin/dashboard", adminDashboardRoutes);
+app.use("/api/admin/donations", adminDonationRoutes);
+app.use("/api/admin/kyc", adminKycRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
