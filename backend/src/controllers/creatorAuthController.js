@@ -1,5 +1,6 @@
 import Creator from '../models/Creator.js';
 import { generateToken } from '../utils/jwt.js';
+import { notifyAdmins } from '../utils/notifyAdmins.js';
 
 // ─── POST /api/creator/auth/register ──────────────────────────────────────────
 export const registerCreator = async (req, res) => {
@@ -44,6 +45,22 @@ export const registerCreator = async (req, res) => {
     }
 
     const creator = await Creator.create(creatorData);
+
+    await notifyAdmins({
+      type: 'new_user',
+      title: 'New user registered',
+      message: `${creator.name} created an account as a Campaign Creator.`,
+      priority: 'low',
+      relatedCreator: creator._id,
+    });
+
+    await notifyAdmins({
+      type: 'kyc_pending',
+      title: 'KYC submitted',
+      message: `${creator.name} submitted identity documents for verification.`,
+      priority: 'medium',
+      relatedCreator: creator._id,
+    });
 
     // Generate JWT
     const token = generateToken(creator._id);

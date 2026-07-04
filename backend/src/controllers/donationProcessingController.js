@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import Donation from '../models/Donation.js';
 import Campaign from '../models/Campaign.js';
 import Donor from '../models/Donor.js';
+import { notifyAdmins } from '../utils/notifyAdmins.js';
+
+// Donations at or above this amount trigger a "large donation" admin notification.
+const LARGE_DONATION_THRESHOLD = 10000;
 
 function buildReceipt(donation, campaign, donor) {
   const creatorName = campaign.creator?.foundationName || campaign.creator?.name || 'Unknown Creator';
@@ -82,6 +86,18 @@ export const processDonation = async (req, res) => {
       method: paymentMethod || 'Other',
       status: 'completed',
     });
+
+    if (donation.amount >= LARGE_DONATION_THRESHOLD) {
+      const donorLabel = isAnonymous ? 'An anonymous donor' : (donor.name || 'A donor');
+      await notifyAdmins({
+        type: 'large_donation',
+        title: 'Large donation received',
+        message: `${donorLabel} donated ₹${donation.amount.toLocaleString('en-IN')} on "${campaign.title}".`,
+        priority: 'medium',
+        relatedDonation: donation._id,
+        relatedCampaign: campaign._id,
+      });
+    }
 
     res.status(201).json({
       success: true,

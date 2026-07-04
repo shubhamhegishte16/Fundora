@@ -1,4 +1,5 @@
 import Campaign from '../models/Campaign.js';
+import { notifyAdmins } from '../utils/notifyAdmins.js';
 
 // Creators may only ever place a campaign into one of these states directly.
 // 'active' is admin-only (via approveCampaign); 'completed' is system-driven.
@@ -59,6 +60,16 @@ export const createCampaign = async (req, res) => {
       status: status || 'draft',
     });
 
+    if (campaign.status === 'pending_review') {
+      await notifyAdmins({
+        type: 'campaign_pending',
+        title: 'New campaign pending approval',
+        message: `"${campaign.title}" is awaiting review.`,
+        priority: 'medium',
+        relatedCampaign: campaign._id,
+      });
+    }
+
     res.status(201).json({ success: true, campaign });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -93,6 +104,17 @@ export const updateCampaign = async (req, res) => {
     }
 
     await campaign.save();
+
+    if (req.body.status === 'pending_review') {
+      await notifyAdmins({
+        type: 'campaign_pending',
+        title: 'New campaign pending approval',
+        message: `"${campaign.title}" is awaiting review.`,
+        priority: 'medium',
+        relatedCampaign: campaign._id,
+      });
+    }
+
     res.json({ success: true, campaign });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

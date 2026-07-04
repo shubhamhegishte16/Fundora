@@ -1,4 +1,5 @@
 import FraudAlert from '../models/FraudAlert.js';
+import { notifyAdmins } from '../utils/notifyAdmins.js';
 
 const SEVERITY_MAP = { Critical: 'critical', High: 'high', Medium: 'medium', Low: 'low' };
 const STATUS_MAP = { Open: 'open', 'Under Review': 'investigating', Resolved: 'resolved', Dismissed: 'dismissed' };
@@ -150,6 +151,18 @@ export const createFraudAlert = async (req, res) => {
       relatedUser: userId || null,
       relatedDonation: donationId || null,
       flaggedBy: req.admin._id,
+    });
+
+    await notifyAdmins({
+      type: 'fraud_alert',
+      title: 'Fraud flag raised',
+      message: `"${alert.title}" has been flagged for suspicious activity.`,
+      priority: alert.severity === 'critical' || alert.severity === 'high' ? 'high' : 'medium',
+      relatedFraudAlert: alert._id,
+      relatedCampaign: alert.relatedCampaign || null,
+      relatedCreator: alert.relatedCreator || null,
+      relatedUser: alert.relatedUser || null,
+      relatedDonation: alert.relatedDonation || null,
     });
 
     res.status(201).json({ success: true, alert });

@@ -1,5 +1,5 @@
 import Creator from '../models/Creator.js';
-import AdminNotification from '../models/AdminNotification.js';
+import { notifyAdmins } from '../utils/notifyAdmins.js';
 
 const SAFE_FIELDS = '-password';
 
@@ -68,6 +68,14 @@ export const approveKyc = async (req, res) => {
     creator.kycReviewedAt = new Date();
     await creator.save();
 
+    await notifyAdmins({
+      type: 'kyc_pending',
+      title: 'KYC approved',
+      message: `${creator.foundationName || creator.name}'s KYC verification has been approved.`,
+      priority: 'low',
+      relatedCreator: creator._id,
+    });
+
     res.json({ success: true, creator: { id: creator._id, name: creator.name, kycStatus: creator.kycStatus } });
   } catch (error) {
     console.error('approveKyc error:', error);
@@ -94,6 +102,14 @@ export const rejectKyc = async (req, res) => {
     creator.kycReviewedBy = req.admin._id;
     creator.kycReviewedAt = new Date();
     await creator.save();
+
+    await notifyAdmins({
+      type: 'kyc_pending',
+      title: 'KYC rejected',
+      message: `${creator.foundationName || creator.name}'s KYC verification was rejected: ${creator.kycRejectionReason}`,
+      priority: 'low',
+      relatedCreator: creator._id,
+    });
 
     res.json({ success: true, creator: { id: creator._id, name: creator.name, kycStatus: creator.kycStatus } });
   } catch (error) {
