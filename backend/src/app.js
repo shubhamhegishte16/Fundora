@@ -18,6 +18,7 @@ import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
 import adminDonationRoutes from "./routes/adminDonationRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
 import MockDonationRoutes from './routes/MockDonationRoutes.js';
+import myDonationsRoutes from './routes/myDonationsRoutes.js';
 // ...
 
 dotenv.config();
@@ -53,6 +54,7 @@ app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use("/api/admin/kyc", adminKycRoutes);
 
+app.use("/api/donor/mydonations", myDonationsRoutes);
 app.use('/api', MockDonationRoutes);
 
 // Health check

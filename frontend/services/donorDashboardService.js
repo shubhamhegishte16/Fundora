@@ -31,3 +31,13 @@ export const getDonorDashboard = async () => {
         throw error;
     }
 };
+
+export const getDonorMyDonations = async () => {
+    try {
+        const response = await api.get('/donor/mydonations');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching my donations:', error);
+        throw error;
+    }
+};
