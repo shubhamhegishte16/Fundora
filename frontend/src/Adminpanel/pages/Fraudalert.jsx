@@ -1,14 +1,6 @@
-import React, { useState } from "react";
-import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Eye, Flag, Clock, Search } from "lucide-react";
-
-const fraudFlags = [
-  { id: 1, campaign: "Clean Water Initiative", creator: "Pooja Khanna", reason: "Suspicious donation pattern", severity: "High", reported: "2 hr ago", status: "Open", donations: 12, amount: "₹45,000", trust: 38 },
-  { id: 2, campaign: "Startup Accelerator Fund", creator: "Nikhil Gupta", reason: "Fake KYC documents suspected", severity: "Critical", reported: "5 hr ago", status: "Under Review", donations: 8, amount: "₹80,000", trust: 22 },
-  { id: 3, campaign: "Medical Aid Nepal", creator: "Unknown User", reason: "Multiple accounts from same IP", severity: "High", reported: "1 day ago", status: "Open", donations: 34, amount: "₹1,20,000", trust: 15 },
-  { id: 4, campaign: "Animal Rescue Fund", creator: "Priya S.", reason: "Duplicate campaign detected", severity: "Medium", reported: "2 days ago", status: "Resolved", donations: 5, amount: "₹9,500", trust: 55 },
-  { id: 5, campaign: "Digital Library Project", creator: "Sumit R.", reason: "Rapid unusual donations spike", severity: "Medium", reported: "3 days ago", status: "Open", donations: 22, amount: "₹60,000", trust: 44 },
-  { id: 6, campaign: "Flood Relief Bihar", creator: "NGO Helper", reason: "Unverified organization", severity: "Low", reported: "4 days ago", status: "Dismissed", donations: 60, amount: "₹2,10,000", trust: 68 },
-];
+import React, { useState, useEffect, useCallback } from "react";
+import { ShieldAlert, AlertTriangle, CheckCircle, XCircle, Eye, Flag, Clock, Search, Loader2 } from "lucide-react";
+import adminAxios from "../utils/adminAxios";
 
 const SeverityBadge = ({ severity }) => {
   const map = {
@@ -17,7 +9,7 @@ const SeverityBadge = ({ severity }) => {
     Medium: "bg-amber-100 text-amber-700 border border-amber-200",
     Low: "bg-blue-100 text-blue-700 border border-blue-200",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${map[severity]}`}>{severity}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${map[severity] || "bg-gray-100 text-gray-500"}`}>{severity}</span>;
 };
 
 const StatusBadge = ({ status }) => {
@@ -27,7 +19,7 @@ const StatusBadge = ({ status }) => {
     Resolved: "bg-green-50 text-green-700",
     Dismissed: "bg-gray-100 text-gray-500",
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status]}`}>{status}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${map[status] || "bg-gray-100 text-gray-500"}`}>{status}</span>;
 };
 
 const TrustScore = ({ score }) => {
@@ -46,18 +38,62 @@ export default function FraudAlert() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [severityFilter, setSeverityFilter] = useState("All");
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const open = fraudFlags.filter((f) => f.status === "Open").length;
-  const critical = fraudFlags.filter((f) => f.severity === "Critical").length;
-  const underReview = fraudFlags.filter((f) => f.status === "Under Review").length;
-  const resolved = fraudFlags.filter((f) => f.status === "Resolved" || f.status === "Dismissed").length;
+  const [flags, setFlags] = useState([]);
+  const [stats, setStats] = useState({ open: 0, critical: 0, underReview: 0, resolved: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [actingId, setActingId] = useState(null);
 
-  const filtered = fraudFlags.filter((f) => {
-    const matchSearch = f.campaign.toLowerCase().includes(search.toLowerCase()) || f.creator.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "All" || f.status === statusFilter;
-    const matchSeverity = severityFilter === "All" || f.severity === severityFilter;
-    return matchSearch && matchStatus && matchSeverity;
-  });
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const { data } = await adminAxios.get("/fraud/stats");
+      setStats(data.stats);
+    } catch (err) {
+      console.error("Failed to load fraud stats:", err);
+    }
+  }, []);
+
+  const fetchFlags = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const { data } = await adminAxios.get("/fraud", {
+        params: { search: debouncedSearch || undefined, status: statusFilter, severity: severityFilter },
+      });
+      setFlags(data.alerts || []);
+    } catch (err) {
+      console.error("Failed to load fraud alerts:", err);
+      setError(err.response?.data?.message || "Failed to load fraud alerts.");
+      setFlags([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, statusFilter, severityFilter]);
+
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => { fetchFlags(); }, [fetchFlags]);
+
+  const STATUS_TO_API = { "Under Review": "investigating", Resolved: "resolved", Dismissed: "dismissed", Open: "open" };
+
+  const changeStatus = async (id, statusLabel) => {
+    setActingId(id);
+    try {
+      await adminAxios.patch(`/fraud/${id}/status`, { status: STATUS_TO_API[statusLabel] || statusLabel.toLowerCase() });
+      await Promise.all([fetchFlags(), fetchStats()]);
+    } catch (err) {
+      console.error("Failed to update fraud alert:", err);
+      alert(err.response?.data?.message || "Failed to update fraud alert.");
+    } finally {
+      setActingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -68,17 +104,19 @@ export default function FraudAlert() {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-sm font-medium text-red-600">{open} Active Alerts</span>
+          <span className="text-sm font-medium text-red-600">{stats.open} Active Alerts</span>
         </div>
       </div>
+
+      {error && <div className="bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">{error}</div>}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Open Alerts", value: open, color: "text-red-600", bg: "bg-red-50", border: "border-red-100", icon: AlertTriangle },
-          { label: "Critical", value: critical, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100", icon: ShieldAlert },
-          { label: "Under Review", value: underReview, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: Clock },
-          { label: "Resolved", value: resolved, color: "text-green-600", bg: "bg-green-50", border: "border-green-100", icon: CheckCircle },
+          { label: "Open Alerts", value: stats.open, color: "text-red-600", bg: "bg-red-50", border: "border-red-100", icon: AlertTriangle },
+          { label: "Critical", value: stats.critical, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-100", icon: ShieldAlert },
+          { label: "Under Review", value: stats.underReview, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100", icon: Clock },
+          { label: "Resolved", value: stats.resolved, color: "text-green-600", bg: "bg-green-50", border: "border-green-100", icon: CheckCircle },
         ].map((s) => (
           <div key={s.label} className={`${s.bg} border ${s.border} rounded-2xl p-4 flex items-center gap-3`}>
             <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center flex-shrink-0 shadow-sm`}>
@@ -93,16 +131,16 @@ export default function FraudAlert() {
       </div>
 
       {/* Critical Banner */}
-      {critical > 0 && (
+      {stats.critical > 0 && severityFilter !== "Critical" && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-red-500 flex items-center justify-center flex-shrink-0">
             <ShieldAlert className="w-5 h-5 text-white" />
           </div>
           <div>
-            <p className="font-semibold text-red-800">{critical} Critical alert{critical > 1 ? "s" : ""} need immediate attention</p>
+            <p className="font-semibold text-red-800">{stats.critical} Critical alert{stats.critical > 1 ? "s" : ""} need immediate attention</p>
             <p className="text-xs text-red-600 mt-0.5">These campaigns may involve fraudulent activity. Review and take action promptly.</p>
           </div>
-          <button className="ml-auto bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-600 transition-colors flex-shrink-0">
+          <button onClick={() => setSeverityFilter("Critical")} className="ml-auto bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-red-600 transition-colors flex-shrink-0">
             Review Critical
           </button>
         </div>
@@ -135,7 +173,13 @@ export default function FraudAlert() {
 
       {/* Fraud Cards */}
       <div className="space-y-3">
-        {filtered.map((f) => (
+        {loading ? (
+          <div className="bg-white rounded-2xl p-10 text-center text-gray-400 border border-gray-100">
+            <Loader2 className="w-5 h-5 animate-spin inline-block mr-2" /> Loading fraud alerts...
+          </div>
+        ) : flags.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center text-gray-400 border border-gray-100">No fraud alerts found.</div>
+        ) : flags.map((f) => (
           <div key={f.id} className={`bg-white rounded-2xl shadow-sm border overflow-hidden
             ${f.severity === "Critical" ? "border-red-200" : f.severity === "High" ? "border-orange-200" : "border-gray-100"}`}>
             <div className="p-5">
@@ -184,14 +228,19 @@ export default function FraudAlert() {
                   <button className="flex items-center gap-1.5 px-3.5 py-2 bg-[#F0F7F4] text-[#2D6A4F] rounded-xl text-xs font-semibold hover:bg-[#D8F3DC] transition-colors">
                     <Eye className="w-3.5 h-3.5" /> View Campaign
                   </button>
-                  <button className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-semibold hover:bg-amber-100 transition-colors">
-                    <Clock className="w-3.5 h-3.5" /> Mark Under Review
+                  {f.status !== "Under Review" && (
+                    <button disabled={actingId === f.id} onClick={() => changeStatus(f.id, "Under Review")}
+                      className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-50 text-amber-700 rounded-xl text-xs font-semibold hover:bg-amber-100 transition-colors disabled:opacity-50">
+                      <Clock className="w-3.5 h-3.5" /> Mark Under Review
+                    </button>
+                  )}
+                  <button disabled={actingId === f.id} onClick={() => changeStatus(f.id, "Resolved")}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
+                    <XCircle className="w-3.5 h-3.5" /> Resolve (Action Taken)
                   </button>
-                  <button className="flex items-center gap-1.5 px-3.5 py-2 bg-red-50 text-red-600 rounded-xl text-xs font-semibold hover:bg-red-100 transition-colors">
-                    <XCircle className="w-3.5 h-3.5" /> Suspend Campaign
-                  </button>
-                  <button className="flex items-center gap-1.5 px-3.5 py-2 bg-green-50 text-green-700 rounded-xl text-xs font-semibold hover:bg-green-100 transition-colors">
-                    <CheckCircle className="w-3.5 h-3.5" /> Dismiss Alert
+                  <button disabled={actingId === f.id} onClick={() => changeStatus(f.id, "Dismissed")}
+                    className="flex items-center gap-1.5 px-3.5 py-2 bg-green-50 text-green-700 rounded-xl text-xs font-semibold hover:bg-green-100 transition-colors disabled:opacity-50">
+                    {actingId === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />} Dismiss Alert
                   </button>
                 </div>
               )}

@@ -22,6 +22,7 @@ import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
 import adminDonationRoutes from "./routes/adminDonationRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
+import adminFraudRoutes from "./routes/adminFraudRoutes.js";
 // ...
 
 dotenv.config();
@@ -57,6 +58,7 @@ app.use("/api/admin/dashboard", adminDashboardRoutes);
 app.use("/api/admin/campaigns", adminCampaignRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use("/api/admin/kyc", adminKycRoutes);
+app.use("/api/admin/fraud", adminFraudRoutes);
 app.use("/api/admin", adminUserRoutes);
 
 // Health check

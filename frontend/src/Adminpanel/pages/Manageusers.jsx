@@ -33,7 +33,7 @@ async function apiRequest(path, options = {}) {
 // ---------------------------------------------------------------------------
 const ROLE_LABEL = { donor: "Donor", creator: "Campaign Creator", admin: "Admin" };
 const STATUS_LABEL = { active: "Active", suspended: "Suspended", inactive: "Inactive" };
-const KYC_LABEL = { verified: "Verified", pending: "Pending", "n/a": "N/A" };
+const KYC_LABEL = { verified: "Verified", pending: "Pending", rejected: "Rejected", "n/a": "N/A" };
 
 const formatDate = (iso) => {
   if (!iso) return "—";
@@ -85,6 +85,7 @@ const KYCBadge = ({ kyc, onClick }) => {
   const map = {
     Verified: "bg-[#D8F3DC] text-[#2D6A4F]",
     Pending: "bg-amber-100 text-amber-700 cursor-pointer hover:bg-amber-200",
+    Rejected: "bg-red-100 text-red-600",
     "N/A": "bg-gray-100 text-gray-400",
   };
   return (
