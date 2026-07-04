@@ -16,7 +16,7 @@ import {
     CircleUser,
     Menu,
     X,
-    Key, 
+    Key,
     Eye,
     EyeOff,
     Trophy,
@@ -34,7 +34,14 @@ import {
     Cross
 } from "lucide-react";
 import Sidebar from "./Sidebar";
-import { getProfile, updateProfile, changePassword } from "../../services/donorProfileService.js";
+import {
+    getProfile,
+    updateProfile,
+    changePassword,
+    getBadgeData,
+    getDonationStats,
+    getRecurringDetails
+} from "../../services/donorProfileService.js";
 
 // --- Badge Configuration ---
 const BADGE_CONFIG = {
@@ -115,8 +122,8 @@ const DonorProfile = () => {
     // State for editable data
     const [donorDetails, setDonorDetails] = useState([]);
     const [personalDetails, setPersonalDetails] = useState([]);
-    
-    // Recurring details - read-only, from other databases
+
+    // Recurring details - FROM REAL DB
     const [recurringDetails, setRecurringDetails] = useState([
         { label: "Amount", value: "$0" },
         { label: "Frequency", value: "Monthly" },
@@ -127,6 +134,13 @@ const DonorProfile = () => {
         { label: "Total", value: "$0" },
         { label: "Method", value: "Not set" }
     ]);
+
+    // Donation stats - FROM REAL DB
+    const [donationStats, setDonationStats] = useState({
+        lifetimeDonations: 0,
+        avgDonationSize: 0,
+        recentDonations: []
+    });
 
     const [editingDonor, setEditingDonor] = useState(false);
 
@@ -154,81 +168,139 @@ const DonorProfile = () => {
     });
     const [badgesLoading, setBadgesLoading] = useState(true);
 
+    // ==================== FETCH ALL DATA ====================
     useEffect(() => {
-        fetchProfile();
-        fetchBadgeData();
+        fetchAllData();
     }, []);
 
-    // Fetch badge data from backend
-    const fetchBadgeData = async () => {
+    const fetchAllData = async () => {
         try {
-            setBadgesLoading(true);
-            
-            // Replace with your actual API endpoint
-            const response = await fetch('/api/donor/badges', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            setLoading(true);
+            setFetchError(null);
 
-            if (!response.ok) {
-                throw new Error('Failed to fetch badge data');
+            // Fetch all data in parallel
+            const [profileResponse, statsResponse, recurringResponse, badgeStatsResponse] = await Promise.all([
+                getProfile().catch(err => ({ success: false, error: err })),
+                getDonationStats().catch(err => ({ success: false, error: err })),
+                getRecurringDetails().catch(err => ({ success: false, error: err })),
+                getBadgeData().catch(err => ({ success: false, error: err }))
+            ]);
+
+            // 1. Handle Profile
+            if (profileResponse && profileResponse.success) {
+                setUser(profileResponse.user);
+                setProfile(profileResponse.profile);
             }
 
-            const data = await response.json();
-            
-            // Update badge stats from backend
-            setBadgeStats({
-                totalDonations: data.totalDonations || 0,
-                donationCount: data.donationCount || 0,
-                monthsActive: data.monthsActive || 0,
-                isRecurring: data.isRecurring || false
-            });
+            // 2. Handle Donation Stats
+            if (statsResponse && statsResponse.success) {
+                const stats = statsResponse.data;
+                setDonationStats({
+                    lifetimeDonations: stats.lifetimeDonations || stats.totalDonations || 0,
+                    avgDonationSize: stats.averageDonationSize || stats.avgDonation || 0,
+                    recentDonations: stats.recentDonations || []
+                });
+            }
 
-            // Set badges with unlock status
-            const badgeList = Object.keys(BADGE_CONFIG).map(name => ({
-                name,
-                icon: BADGE_CONFIG[name].icon,
-                requirement: BADGE_CONFIG[name].requirement,
-                unlocked: BADGE_CONFIG[name].check({
-                    totalDonations: data.totalDonations || 0,
-                    donationCount: data.donationCount || 0,
-                    monthsActive: data.monthsActive || 0,
-                    isRecurring: data.isRecurring || false
-                })
-            }));
+            // 3. Handle Recurring Details
+            if (recurringResponse && recurringResponse.success) {
+                const recurring = recurringResponse.data;
+                setRecurringDetails([
+                    { label: "Amount", value: recurring.hasRecurring ? `$${recurring.amount}` : "$0" },
+                    { label: "Frequency", value: recurring.frequency || "Monthly" },
+                    { label: "Created", value: recurring.created || "N/A" }
+                ]);
+                setRecurringDetails2([
+                    { label: "Giving Fund", value: recurring.hasRecurring ? `$${recurring.givingFund}` : "$0" },
+                    { label: "Total", value: recurring.hasRecurring ? `$${recurring.total}` : "$0" },
+                    { label: "Method", value: recurring.method || "Not set" }
+                ]);
+            }
 
-            setBadges(badgeList);
+            // 4. Handle Badge Stats - Calculate badges from stats
+            if (badgeStatsResponse && badgeStatsResponse.success) {
+                const stats = badgeStatsResponse.data;
+
+                // Update badge stats
+                setBadgeStats({
+                    totalDonations: stats.totalDonations || 0,
+                    donationCount: stats.donationCount || 0,
+                    monthsActive: stats.monthsActive || 0,
+                    isRecurring: stats.isRecurring || false
+                });
+
+                // Calculate badges from BADGE_CONFIG using the stats
+                const calculatedBadges = Object.keys(BADGE_CONFIG).map(name => {
+                    const badge = BADGE_CONFIG[name];
+                    const isUnlocked = badge.check({
+                        totalDonations: stats.totalDonations || 0,
+                        donationCount: stats.donationCount || 0,
+                        monthsActive: stats.monthsActive || 0,
+                        isRecurring: stats.isRecurring || false
+                    });
+
+                    return {
+                        name: name,
+                        icon: badge.icon,
+                        requirement: badge.requirement,
+                        unlocked: isUnlocked,
+                        level: isUnlocked ? getBadgeLevel(name) : 'Locked'
+                    };
+                });
+
+                setBadges(calculatedBadges);
+                setBadgesLoading(false);
+            } else {
+                // Fallback: Use BADGE_CONFIG with all locked
+                const defaultBadges = Object.keys(BADGE_CONFIG).map(name => ({
+                    name,
+                    icon: BADGE_CONFIG[name].icon,
+                    requirement: BADGE_CONFIG[name].requirement,
+                    unlocked: false,
+                    level: 'Locked'
+                }));
+                setBadges(defaultBadges);
+                setBadgesLoading(false);
+            }
 
         } catch (error) {
-            console.error("Error fetching badge data:", error);
-            // Fallback to default badges with all locked
-            const defaultBadges = Object.keys(BADGE_CONFIG).map(name => ({
-                name,
-                icon: BADGE_CONFIG[name].icon,
-                requirement: BADGE_CONFIG[name].requirement,
-                unlocked: false
-            }));
-            setBadges(defaultBadges);
+            console.error("Error fetching data:", error);
+            setFetchError(error?.message || "Failed to load data. Please refresh the page.");
         } finally {
-            setBadgesLoading(false);
+            setLoading(false);
         }
     };
 
+    // Helper function to get badge level based on name
+    const getBadgeLevel = (badgeName) => {
+        const levels = {
+            'First Milestone': 'Bronze',
+            'Squad Supporter': 'Bronze',
+            'First Keeper': 'Silver',
+            'Local Upper': 'Silver',
+            'Awarded Fund': 'Gold',
+            'Control Peak': 'Platinum',
+            'Stock Keeper': 'Silver',
+            'Ground Guardian': 'Gold',
+            'Holdout Hero': 'Gold',
+            'Anniversary Anchor': 'Platinum',
+            'Lifelong Pillar': 'Diamond',
+            'Canopy Cheerpien': 'Bronze'
+        };
+        return levels[badgeName] || 'Bronze';
+    };
+
+    // Update donor details when profile data changes
     useEffect(() => {
         if (user) {
-            // Check if profile is complete by checking if required fields exist
             const hasProfileData = profile && (
-                profile.address || 
-                profile.city || 
-                profile.state || 
-                profile.country || 
-                profile.dob || 
+                profile.address ||
+                profile.city ||
+                profile.state ||
+                profile.country ||
+                profile.dob ||
                 profile.gender
             );
-            
             setIsProfileComplete(hasProfileData);
 
             setDonorDetails([
@@ -307,39 +379,7 @@ const DonorProfile = () => {
         }
     }, [profile, user]);
 
-    const fetchProfile = async () => {
-        try {
-            setFetchError(null);
-            setLoading(true);
-            
-            const response = await getProfile();
-            
-            if (response && response.success) {
-                setUser(response.user || null);
-                setProfile(response.profile || null);
-            } else {
-                throw new Error(response?.message || 'Failed to fetch profile');
-            }
-            
-        } catch (error) {
-            console.error("Error fetching profile:", error);
-            setFetchError(error?.response?.data?.message || error.message || "Failed to load profile. Please refresh the page.");
-            
-            try {
-                const storedUser = localStorage.getItem('user');
-                if (storedUser) {
-                    const userData = JSON.parse(storedUser);
-                    setUser(userData);
-                    setProfile({});
-                }
-            } catch (e) {
-                console.error("Error parsing stored user:", e);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // ==================== HANDLERS ====================
     const handleDonorChange = (index, value, isPersonal = false) => {
         if (isPersonal) {
             const updated = [...personalDetails];
@@ -355,7 +395,7 @@ const DonorProfile = () => {
     const saveProfileUpdates = async () => {
         try {
             setSaveError(null);
-            
+
             const profileData = {
                 firstName: donorDetails[0]?.value || "",
                 lastName: donorDetails[1]?.value || "",
@@ -369,9 +409,9 @@ const DonorProfile = () => {
             };
 
             const response = await updateProfile(profileData);
-            
+
             if (response && response.success) {
-                await fetchProfile();
+                await fetchAllData();
                 setEditingDonor(false);
                 alert("Profile updated successfully!");
             } else {
@@ -389,25 +429,24 @@ const DonorProfile = () => {
         e.preventDefault();
         setPasswordError('');
         setPasswordSuccess('');
-        
-        // Validation
+
         if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
             setPasswordError('Please fill in all fields');
             return;
         }
-        
+
         if (passwordData.newPassword.length < 6) {
             setPasswordError('New password must be at least 6 characters long');
             return;
         }
-        
+
         if (passwordData.newPassword !== passwordData.confirmPassword) {
             setPasswordError('New passwords do not match');
             return;
         }
-        
+
         setIsChangingPassword(true);
-        
+
         try {
             const response = await changePassword(passwordData);
             if (response && response.success) {
@@ -417,7 +456,6 @@ const DonorProfile = () => {
                     newPassword: '',
                     confirmPassword: ''
                 });
-                // Close modal after 2 seconds
                 setTimeout(() => {
                     setShowPasswordModal(false);
                     setPasswordSuccess('');
@@ -434,17 +472,10 @@ const DonorProfile = () => {
         }
     };
 
-    const donationActivity = [
-        { donation: "$0", duration: "No donations yet" },
-        { donation: "$0", duration: "No donations yet" },
-        { donation: "$0", duration: "No donations yet" },
-        { donation: "$0", duration: "First Donation" },
-    ];
-
     const buttons = [
-        { label: "Donation" },
-        { label: "History" },
-        { label: "My Rewards" }
+        { label: "Donation", action: () => console.log("Go to Donation") },
+        { label: "History", action: () => console.log("Go to History") },
+        { label: "My Rewards", action: () => console.log("Go to Rewards") }
     ];
 
     if (loading) {
@@ -487,7 +518,7 @@ const DonorProfile = () => {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Header - Updated */}
+                {/* Header */}
                 <header className="hidden lg:flex sticky top-0 z-30 bg-[#F8F9FA] border-b border-gray-100/80 px-4 md:px-8 py-5 items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="min-w-0 flex-1">
@@ -498,8 +529,6 @@ const DonorProfile = () => {
                             </h1>
                         </div>
                     </div>
-
-                    {/* Profile Verified - Moved to right */}
                     <div className="flex items-center gap-2">
                         <div className={`flex h-5 w-5 items-center justify-center rounded-full flex-shrink-0 ${isProfileComplete ? 'bg-[#6DD89B]' : 'bg-yellow-400'}`}>
                             <Check size={12} className="text-white" />
@@ -512,16 +541,16 @@ const DonorProfile = () => {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto">
-                    {/* Error Display */}
+                    {/* Errors */}
                     {fetchError && (
                         <div className="px-4 md:px-8 pt-4">
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                                <div className="text-red-600 text-lg"><Cross size={10}/></div>
+                                <div className="text-red-600 text-lg"><Cross size={10} /></div>
                                 <div className="flex-1">
                                     <p className="text-sm text-red-800 font-medium">Error Loading Profile</p>
                                     <p className="text-xs text-red-700 mt-1">{fetchError}</p>
-                                    <button 
-                                        onClick={fetchProfile}
+                                    <button
+                                        onClick={fetchAllData}
                                         className="mt-2 text-xs text-red-600 font-medium hover:text-red-700 underline"
                                     >
                                         Retry
@@ -534,7 +563,7 @@ const DonorProfile = () => {
                     {saveError && (
                         <div className="px-4 md:px-8 pt-4">
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-                                <div className="text-red-600 text-lg"><Cross size={10}/></div>
+                                <div className="text-red-600 text-lg"><Cross size={10} /></div>
                                 <div className="flex-1">
                                     <p className="text-sm text-red-800 font-medium">Error Saving Profile</p>
                                     <p className="text-xs text-red-700 mt-1">{saveError}</p>
@@ -543,7 +572,7 @@ const DonorProfile = () => {
                         </div>
                     )}
 
-                    {/* User Defined Section */}
+                    {/* User Stats - NOW WITH REAL DATA */}
                     <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 px-4 md:px-8 py-6">
                         <div className="flex justify-center gap-3">
                             <div className="flex items-center justify-center flex-shrink-0">
@@ -556,16 +585,17 @@ const DonorProfile = () => {
                         </div>
                         <div className="flex flex-wrap sm:flex-nowrap items-center justify-center sm:justify-start gap-6 lg:gap-10 xl:gap-16">
                             <div className="grid text-center sm:text-left">
-                                <span className="font-extrabold text-lg md:text-xl">$ 0</span>
+                                <span className="font-extrabold text-lg md:text-xl">${donationStats.lifetimeDonations?.toLocaleString() || 0}</span>
                                 <span className="font-medium text-[15px] text-gray-600">Lifetime Donations</span>
                             </div>
                             <div className="grid text-center sm:text-left">
-                                <span className="font-extrabold text-lg md:text-xl">$ 0</span>
+                                <span className="font-extrabold text-lg md:text-xl">${donationStats.avgDonationSize?.toLocaleString() || 0}</span>
                                 <span className="font-medium text-[15px] text-gray-600">Avg Donations Size</span>
                             </div>
                         </div>
                     </div>
 
+                    {/* Profile Incomplete Warning */}
                     {!isProfileComplete && user && (
                         <div className="px-4 md:px-8 pb-4">
                             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
@@ -583,7 +613,7 @@ const DonorProfile = () => {
 
                     <div className="flex flex-col xl:flex-row gap-6 px-4 md:px-6 pb-6">
                         <div className="flex-1 min-w-0">
-                            {/* Donor Data */}
+                            {/* Donor Details */}
                             <div className="bg-white border border-gray-100 rounded-xl p-5 md:p-7 shadow-sm relative mb-5 w-full">
                                 <div className="flex items-center justify-between mb-6 w-full">
                                     <div className="flex items-center gap-2 text-gray-900 font-bold text-lg md:text-xl min-w-0">
@@ -602,7 +632,7 @@ const DonorProfile = () => {
                                         <button
                                             onClick={() => {
                                                 if (editingDonor) {
-                                                    fetchProfile();
+                                                    fetchAllData();
                                                 }
                                                 setEditingDonor(!editingDonor);
                                             }}
@@ -628,9 +658,8 @@ const DonorProfile = () => {
                                                         type="text"
                                                         value={item.value}
                                                         onChange={(e) => handleDonorChange(index, e.target.value, false)}
-                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${
-                                                            item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                                                        }`}
+                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                                                            }`}
                                                         disabled={item.isFromAuth}
                                                         placeholder={item.isRequired && !item.value ? "Required" : ""}
                                                     />
@@ -656,9 +685,8 @@ const DonorProfile = () => {
                                                         type={item.label === "DOB" ? "date" : "text"}
                                                         value={item.value}
                                                         onChange={(e) => handleDonorChange(index, e.target.value, true)}
-                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${
-                                                            item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                                                        }`}
+                                                        className={`text-gray-800 font-bold bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent w-full ${item.isFromAuth ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                                                            }`}
                                                         disabled={item.isFromAuth}
                                                         placeholder={item.isRequired && !item.value ? "Required" : ""}
                                                     />
@@ -673,7 +701,7 @@ const DonorProfile = () => {
                                 </div>
                             </div>
 
-                            {/* Recurring Details - READ ONLY */}
+                            {/* Recurring Details - FROM REAL DB */}
                             <div className="bg-white border border-gray-100 rounded-xl p-5 md:p-7 shadow-sm relative mb-5 w-full">
                                 <div className="flex items-center justify-between mb-6 w-full">
                                     <div className="flex items-center gap-2 text-gray-900 font-bold text-lg md:text-xl min-w-0">
@@ -715,22 +743,33 @@ const DonorProfile = () => {
                             </div>
                         </div>
 
+                        {/* Right Sidebar - Donation Activity FROM REAL DB */}
                         <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm w-full xl:max-w-sm h-fit flex-shrink-0">
-                            {donationActivity.map((item, index) => (
-                                <div key={index} className="flex items-start gap-3 py-3 border-b last:border-b-0">
+                            {donationStats.recentDonations && donationStats.recentDonations.length > 0 ? (
+                                donationStats.recentDonations.map((item, index) => (
+                                    <div key={index} className="flex items-start gap-3 py-3 border-b last:border-b-0">
+                                        <RefreshCw size={25} className="flex-shrink-0 text-[#00a86b]" />
+                                        <div className="grid min-w-0">
+                                            <span className="font-black text-[14px] truncate">${item.amount} {item.currency || 'USD'}</span>
+                                            <span className="text-gray-500 text-[11px] truncate">{item.duration || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex items-start gap-3 py-3 border-b last:border-b-0">
                                     <RefreshCw size={25} className="flex-shrink-0 text-gray-300" />
                                     <div className="grid min-w-0">
-                                        <span className="font-black text-[14px] truncate text-gray-400">{item.donation}</span>
-                                        <span className="text-gray-400 text-[11px] truncate">{item.duration}</span>
+                                        <span className="font-black text-[14px] truncate text-gray-400">$0</span>
+                                        <span className="text-gray-400 text-[11px] truncate">No donations yet</span>
                                     </div>
                                 </div>
-                            ))}
+                            )}
 
                             <div className="flex flex-col gap-3 mt-8">
                                 {buttons.map((item) => (
                                     <button
                                         key={item.label}
-                                        onClick={() => console.log(`Clicked ${item.label}`)}
+                                        onClick={item.action}
                                         className="w-full bg-[#00a86b] hover:bg-[#00965e] text-white text-[13px] font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-colors shadow-sm cursor-pointer"
                                     >
                                         <span>{item.label}</span>
@@ -740,7 +779,8 @@ const DonorProfile = () => {
                             </div>
                         </div>
                     </div>
-                
+
+                    {/* ==================== BADGES SECTION ==================== */}
                     <div className="px-4 md:px-6 pb-6">
                         <div className="bg-white border border-gray-100 rounded-xl p-5 md:p-7 shadow-sm w-full">
                             <div className="flex items-center justify-between mb-6">
@@ -748,8 +788,8 @@ const DonorProfile = () => {
                                     <Award size={24} className="text-[#00a86b]" />
                                     <h2>Your Badges</h2>
                                 </div>
-                                <button 
-                                    onClick={fetchBadgeData}
+                                <button
+                                    onClick={fetchAllData}
                                     className="text-sm text-[#00a86b] hover:text-[#00965e] font-medium flex items-center gap-1"
                                 >
                                     <RefreshCw size={14} />
@@ -767,28 +807,26 @@ const DonorProfile = () => {
                                         {badges.map((badge) => (
                                             <div
                                                 key={badge.name}
-                                                className={`relative flex flex-col items-center p-3 rounded-lg transition-all duration-300 ${
-                                                    badge.unlocked 
-                                                        ? 'bg-gradient-to-br from-[#00a86b]/10 to-[#00a86b]/5 border border-[#00a86b]/30 hover:shadow-md' 
+                                                className={`relative flex flex-col items-center p-3 rounded-lg transition-all duration-300 ${badge.unlocked
+                                                        ? 'bg-gradient-to-br from-[#00a86b]/10 to-[#00a86b]/5 border border-[#00a86b]/30 hover:shadow-md'
                                                         : 'bg-gray-50 border border-gray-200 opacity-60'
-                                                }`}
+                                                    }`}
                                             >
-                                                {/* Badge Icon */}
                                                 <div className={`text-3xl mb-1 ${badge.unlocked ? '' : 'filter blur-[1px]'}`}>
                                                     {badge.icon}
                                                 </div>
-                                                
-                                                {/* Badge Name */}
-                                                <span className={`text-xs font-medium text-center leading-tight ${
-                                                    badge.unlocked ? 'text-gray-800' : 'text-gray-400'
-                                                }`}>
+                                                <span className={`text-xs font-medium text-center leading-tight ${badge.unlocked ? 'text-gray-800' : 'text-gray-400'
+                                                    }`}>
                                                     {badge.name}
                                                 </span>
-
-                                                {/* Status */}
-                                                <span className={`mt-1 text-[10px] font-medium ${
-                                                    badge.unlocked ? 'text-[#00a86b]' : 'text-gray-400'
-                                                }`}>
+                                                {badge.level && (
+                                                    <span className={`mt-0.5 text-[8px] font-bold uppercase ${badge.unlocked ? 'text-[#00a86b]' : 'text-gray-400'
+                                                        }`}>
+                                                        {badge.level}
+                                                    </span>
+                                                )}
+                                                <span className={`mt-1 text-[10px] font-medium ${badge.unlocked ? 'text-[#00a86b]' : 'text-gray-400'
+                                                    }`}>
                                                     {badge.unlocked ? '✓' : '🔒'}
                                                 </span>
                                             </div>
@@ -804,10 +842,10 @@ const DonorProfile = () => {
                                             </span>
                                         </div>
                                         <div className="mt-2 w-full bg-gray-200 rounded-full h-1.5">
-                                            <div 
+                                            <div
                                                 className="bg-[#00a86b] h-1.5 rounded-full transition-all duration-500"
-                                                style={{ 
-                                                    width: `${(badges.filter(b => b.unlocked).length / badges.length) * 100}%` 
+                                                style={{
+                                                    width: `${(badges.filter(b => b.unlocked).length / badges.length) * 100}%`
                                                 }}
                                             />
                                         </div>
@@ -816,7 +854,6 @@ const DonorProfile = () => {
                             )}
                         </div>
                     </div>
-                    {/* ===== END BADGES SECTION ===== */}
                 </div>
             </div>
 
@@ -931,7 +968,6 @@ const DonorProfile = () => {
                                     </div>
                                 </div>
 
-                                {/* Error/Success Messages */}
                                 {passwordError && (
                                     <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                                         {passwordError}
@@ -943,7 +979,6 @@ const DonorProfile = () => {
                                     </div>
                                 )}
 
-                                {/* Action Buttons */}
                                 <div className="flex gap-3">
                                     <button
                                         type="button"

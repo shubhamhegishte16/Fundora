@@ -164,3 +164,52 @@ export const changePassword = async (req, res) => {
     });
   }
 };
+
+export const createMissingDonor = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // console.log('Creating missing donor for user:', userId);
+
+    // Check if donor exists
+    let donor = await Donor.findOne({ user: userId });
+    if (donor) {
+      return res.status(200).json({
+        success: true,
+        message: 'Donor already exists',
+        data: donor
+      });
+    }
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Create donor
+    donor = await Donor.create({
+      user: userId,
+      name: user.name,
+      email: user.email,
+      role: user.role || 'donor',
+    });
+
+    // console.log('Donor created:', donor);
+
+    res.status(201).json({
+      success: true,
+      message: 'Donor created successfully',
+      data: donor
+    });
+
+  } catch (error) {
+    console.error('Error creating donor:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

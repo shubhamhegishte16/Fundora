@@ -50,3 +50,56 @@ export const changePassword = async (passwordData) => {
         throw error;
     }
 };
+
+// ==================== BADGE SERVICES ====================
+export const getBadgeData = async () => {
+  try {
+    const response = await api.get('/donor/badges');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching badge data:', error);
+    throw error;
+  }
+};
+
+export const seedBadges = async () => {
+  try {
+    const response = await api.post('/donor/badges/seed');
+    return response.data;
+  } catch (error) {
+    console.error('Error seeding badges:', error);
+    throw error;
+  }
+};
+
+// ==================== DONATION SERVICES ====================
+export const getDonationStats = async () => {
+  try {
+    const response = await api.get('/donor/donations/stats');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching donation stats:', error);
+    throw error;
+  }
+};
+
+export const getDonationHistory = async (page = 1, limit = 10) => {
+  try {
+    const response = await api.get(`/donor/donations/history?page=${page}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching donation history:', error);
+    throw error;
+  }
+};
+
+// ==================== RECURRING SERVICES ====================
+export const getRecurringDetails = async () => {
+  try {
+    const response = await api.get('/donor/recurring');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching recurring details:', error);
+    throw error;
+  }
+};

@@ -13,7 +13,7 @@ const badgeSchema = new mongoose.Schema(
     key: { type: String, required: true, unique: true }, // e.g. "first-campaign", stable identifier
     label: { type: String, required: true },
     description: { type: String, required: true },
-    icon: { type: String, required: true }, // maps to a frontend Icon key, e.g. "Flag"
+    icon: { type: String, required: false }, // maps to a frontend Icon key, e.g. "Flag"
 
     criteria: {
       metric: {
