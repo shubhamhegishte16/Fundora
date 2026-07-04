@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import ExploreCampaigns from "./ExploreCampaigns";
 import SavedCampaigns from "./SavedCampaigns";
 import MyDonations from "./MyDonations";
+import FollowingCreators from "./FollowingCreators";
 import { Bell, Menu, TrendingUp, Users, Award, Leaf, Heart, ChevronRight } from "lucide-react";
 import { getDonorDashboard } from "../../services/donorDashboardService.js";
 
@@ -247,6 +248,8 @@ const DonorPanel = () => {
             <SavedCampaigns />
           ) : activeTab === "My Donations" ? (
             <MyDonations />
+          ) : activeTab === "Following Creators" ? (
+            <FollowingCreators />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center text-brand-secondary">
               <h3 className="text-xl font-bold">{activeTab} Section</h3>
