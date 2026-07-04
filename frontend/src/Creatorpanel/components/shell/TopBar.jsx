@@ -1,9 +1,8 @@
 import React from 'react';
 import { Icon } from '../../icons.jsx';
 
-const creator = { name: 'Arjun Sharma', role: 'Creator' };
-
 function initials(name) {
+  if (!name) return '?';
   return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
 }
 
@@ -12,8 +11,10 @@ function initials(name) {
  * Greeting/title on the left, bell + profile chip + the two campaign
  * CTAs on the right. `title`/`subtitle` swap per page; the CTAs and
  * profile chip stay constant since they're global app actions.
+ * `creatorName`/`creatorRole` come from the logged-in creator's real
+ * profile (fetched once in CreatorPanelApp) rather than being hardcoded.
  */
-export default function TopBar({ title, subtitle, onMenuClick }) {
+export default function TopBar({ title, subtitle, onMenuClick, creatorName, creatorRole }) {
   return (
     <header className="flex flex-col gap-4 px-4 pb-2 pt-4 sm:px-6 sm:pt-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="flex items-start gap-3">
@@ -33,19 +34,20 @@ export default function TopBar({ title, subtitle, onMenuClick }) {
           </button>
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-sm font-semibold text-white">
-              {initials(creator.name)}
+              {initials(creatorName)}
             </div>
             <div className="hidden text-sm sm:block">
-              <p className="font-semibold text-slate-900">{creator.name}</p>
-              <p className="text-xs text-slate-500">{creator.role}</p>
+              <p className="font-semibold text-slate-900">{creatorName || 'Loading…'}</p>
+              <p className="text-xs text-slate-500">{creatorRole || 'Creator'}</p>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Text-only for now — this becomes a real "share as report" action later */}
           <button className="flex items-center gap-1.5 rounded-full border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-50">
             <Icon.Share className="h-4 w-4" />
-            Create Campaign
+            Share Campaign
           </button>
           <button className="flex items-center gap-1.5 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
             <Icon.Plus className="h-4 w-4" />
@@ -56,3 +58,4 @@ export default function TopBar({ title, subtitle, onMenuClick }) {
     </header>
   );
 }
+

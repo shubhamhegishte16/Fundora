@@ -8,7 +8,7 @@ import TopBar from './TopBar.jsx';
  * `title`/`subtitle` are passed through to TopBar per page so the
  * header text changes while the chrome around it stays identical.
  */
-export default function AppShell({ activePage, onNavigate, title, subtitle, children }) {
+export default function AppShell({ activePage, onNavigate, title, subtitle, creatorName, creatorRole, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ export default function AppShell({ activePage, onNavigate, title, subtitle, chil
       <Sidebar activePage={activePage} onNavigate={onNavigate} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="min-w-0 flex-1">
-        <TopBar title={title} subtitle={subtitle} onMenuClick={() => setSidebarOpen(true)} />
+        <TopBar title={title} subtitle={subtitle} onMenuClick={() => setSidebarOpen(true)} creatorName={creatorName} creatorRole={creatorRole} />
         <div className="space-y-5 p-4 sm:p-6">{children}</div>
       </main>
     </div>
