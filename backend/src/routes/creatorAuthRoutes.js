@@ -6,6 +6,9 @@ import {
   registerCreator,
   loginCreator,
   getCreatorMe,
+  updateCreatorProfile,
+  updateCreatorNotificationPrefs,
+  changeCreatorPassword,
 } from '../controllers/creatorAuthController.js';
 import { protectCreator } from '../middleware/creatorAuth.js';
 
@@ -49,5 +52,8 @@ router.post('/login', loginCreator);
 
 // Private routes
 router.get('/me', protectCreator, getCreatorMe);
+router.patch('/me', protectCreator, updateCreatorProfile);
+router.patch('/notification-prefs', protectCreator, updateCreatorNotificationPrefs);
+router.patch('/change-password', protectCreator, changeCreatorPassword);
 
 export default router;

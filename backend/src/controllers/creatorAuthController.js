@@ -142,3 +142,89 @@ export const getCreatorMe = async (req, res) => {
     });
   }
 };
+
+// ─── PATCH /api/creator/auth/me ────────────────────────────────────────────────
+// Updates editable profile fields. Email/role are intentionally left out —
+// email changes and role changes aren't exposed through this endpoint.
+export const updateCreatorProfile = async (req, res) => {
+  try {
+    const { name, phone, location, bio, foundationName } = req.body;
+
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (phone !== undefined) updates.phone = phone;
+    if (location !== undefined) updates.location = location;
+    if (bio !== undefined) updates.bio = bio;
+    if (foundationName !== undefined) updates.foundationName = foundationName;
+
+    const creator = await Creator.findByIdAndUpdate(req.user.id, updates, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!creator) {
+      return res.status(404).json({ success: false, message: 'Creator not found' });
+    }
+
+    res.status(200).json({ success: true, creator });
+  } catch (error) {
+    console.error('Creator updateProfile error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── PATCH /api/creator/auth/notification-prefs ───────────────────────────────
+export const updateCreatorNotificationPrefs = async (req, res) => {
+  try {
+    const { donations, milestones, followers, community } = req.body;
+
+    const updates = {};
+    if (donations !== undefined) updates['notificationPrefs.donations'] = donations;
+    if (milestones !== undefined) updates['notificationPrefs.milestones'] = milestones;
+    if (followers !== undefined) updates['notificationPrefs.followers'] = followers;
+    if (community !== undefined) updates['notificationPrefs.community'] = community;
+
+    const creator = await Creator.findByIdAndUpdate(req.user.id, { $set: updates }, { new: true });
+
+    if (!creator) {
+      return res.status(404).json({ success: false, message: 'Creator not found' });
+    }
+
+    res.status(200).json({ success: true, notificationPrefs: creator.notificationPrefs });
+  } catch (error) {
+    console.error('Creator updateNotificationPrefs error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── PATCH /api/creator/auth/change-password ──────────────────────────────────
+export const changeCreatorPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Both current and new password are required' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    const creator = await Creator.findById(req.user.id).select('+password');
+    if (!creator) {
+      return res.status(404).json({ success: false, message: 'Creator not found' });
+    }
+
+    const isMatch = await creator.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    creator.password = newPassword; // pre('save') hook re-hashes this
+    await creator.save();
+
+    res.status(200).json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Creator changePassword error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

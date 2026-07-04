@@ -10,15 +10,18 @@ import donorProfileRoute from "./routes/donorProfileRoute.js";
 import campaignRoutes from "./routes/campaignRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import donationRoutes from "./routes/donationRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import badgeRoutes from "./routes/badgeRoutes.js";
+import communityRoutes from "./routes/communityRoutes.js";
 import donorCampaignRoutes from "./routes/donorCampaignRoutes.js";
 import donorDashboardRoutes from "./routes/donorDashboardRoutes.js";
-import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
-import adminUserRoutes from "./routes/adminUserRoutes.js";
+import myDonationsRoutes from "./routes/myDonationsRoutes.js";
+import MockDonationRoutes from "./routes/MockDonationRoutes.js";
 import adminDashboardRoutes from "./routes/adminDashboardRoutes.js";
+import adminCampaignRoutes from "./routes/adminCampaignRoutes.js";
 import adminDonationRoutes from "./routes/adminDonationRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
-import MockDonationRoutes from './routes/MockDonationRoutes.js';
-import myDonationsRoutes from './routes/myDonationsRoutes.js';
 // ...
 
 dotenv.config();
@@ -26,10 +29,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: 'http://localhost:5173', 
-  credentials: true
-}));
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -45,17 +45,19 @@ app.use('/api/admin/auth', adminAuthRoutes);
 app.use("/api/creator/campaigns", campaignRoutes);
 app.use("/api/creator/dashboard", dashboardRoutes);
 app.use("/api/creator/donations", donationRoutes);
+app.use("/api/creator/notifications", notificationRoutes);
+app.use("/api/creator/badges", badgeRoutes);
+app.use("/api/creator/community", communityRoutes);
 app.use("/api/donor", donorProfileRoute);
 app.use("/api/donor/campaigns", donorCampaignRoutes);
 app.use("/api/donor/dashboard", donorDashboardRoutes);
-app.use("/api/admin/campaigns", adminCampaignRoutes);
-app.use("/api/admin", adminUserRoutes);
+app.use("/api/donor/mydonations", myDonationsRoutes);
+app.use("/api", MockDonationRoutes);
 app.use("/api/admin/dashboard", adminDashboardRoutes);
+app.use("/api/admin/campaigns", adminCampaignRoutes);
 app.use("/api/admin/donations", adminDonationRoutes);
 app.use("/api/admin/kyc", adminKycRoutes);
-
-app.use("/api/donor/mydonations", myDonationsRoutes);
-app.use('/api', MockDonationRoutes);
+app.use("/api/admin", adminUserRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

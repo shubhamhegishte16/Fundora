@@ -55,37 +55,32 @@ const creatorSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Profile Settings page fields
+    bio: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    location: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+    },
+    notificationPrefs: {
+      donations: { type: Boolean, default: true },
+      milestones: { type: Boolean, default: true },
+      followers: { type: Boolean, default: false },
+      community: { type: Boolean, default: true },
+    },
+
     // Verification status — set to true once admin approves KYC
     isVerified: {
       type: Boolean,
       default: false,
-    },
-
-    // --- Added for the admin "KYC Verification" panel ---
-    kycStatus: {
-      type: String,
-      enum: ['pending', 'verified', 'rejected'],
-      default: 'pending',
-    },
-    kycRejectionReason: {
-      type: String,
-      default: null,
-    },
-    kycReviewedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Admin',
-      default: null,
-    },
-    kycReviewedAt: {
-      type: Date,
-      default: null,
-    },
-
-    // --- Added for the admin "Manage Users / Fraud" panels ---
-    status: {
-      type: String,
-      enum: ['active', 'suspended'],
-      default: 'active',
     },
   },
   {

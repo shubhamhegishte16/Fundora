@@ -3,13 +3,11 @@ import Campaign from './Campaign.js';
 
 /**
  * Donation
- * Written by the donor-facing app (out of scope for this backend) —
- * the creator panel only ever reads/filters/aggregates these. We
- * still define the full model + a creation helper here because (a)
- * the creator panel's dashboard/donation-summary endpoints depend on
- * its shape, and (b) keeping the Campaign-sync hooks colocated with
- * the schema avoids a second codebase silently drifting out of sync
- * with this one.
+ * Created by the donor-facing donation flow (see donationController.js /
+ * POST /api/mock-donations) and read/aggregated everywhere else — creator
+ * dashboard, donations list, badges, admin panel, donor's own history.
+ * The post-save hook below keeps Campaign.raisedAmount/donorCount in sync
+ * so those reads never need to re-aggregate on every request.
  */
 const donationSchema = new mongoose.Schema(
   {
@@ -18,6 +16,7 @@ const donationSchema = new mongoose.Schema(
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true, index: true }, // denormalized for fast creator-scoped queries
 
     amount: { type: Number, required: true, min: 1 },
+    tip: { type: Number, default: 0, min: 0 }, // optional platform tip, added at donation time
     isAnonymous: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'completed', 'refunded'], default: 'completed', index: true },
     message: { type: String, trim: true, maxlength: 500 },
@@ -25,9 +24,13 @@ const donationSchema = new mongoose.Schema(
     // --- Added for the admin "Donations" panel ---
     method: {
       type: String,
-      enum: ['UPI', 'Card', 'Net Banking', 'NEFT', 'Wallet', 'Other'],
-      default: 'UPI',
+      trim: true,
+      default: 'Other', // free-form: donor UI sends labels like "Google Pay", "PhonePay", etc.
     },
+    // Receipt identifiers generated at donation time — kept unique+sparse so
+    // older/legacy rows without them (if any) don't collide.
+    transactionId: { type: String, unique: true, sparse: true, index: true },
+    receiptId: { type: String, unique: true, sparse: true },
     // Set when an admin refunds a completed donation (status -> 'refunded').
     refundedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', default: null },
     refundedAt: { type: Date, default: null },
@@ -43,6 +46,18 @@ const donationSchema = new mongoose.Schema(
 
 donationSchema.index({ creator: 1, createdAt: -1 });
 donationSchema.index({ creator: 1, status: 1 });
+
+// Auto-generate receipt identifiers if the caller didn't supply them.
+// Synchronous, no `next` callback — Mongoose 7+ dropped callback-style
+// middleware, so a `next` parameter here would not be a real function.
+donationSchema.pre('save', function () {
+  if (!this.transactionId) {
+    this.transactionId = `TXN-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  }
+  if (!this.receiptId) {
+    this.receiptId = `RCP-${Date.now().toString().slice(-8)}`;
+  }
+});
 
 /**
  * Keep Campaign.raisedAmount / donorCount in sync whenever a
