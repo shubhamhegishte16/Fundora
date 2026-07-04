@@ -138,21 +138,21 @@ const Notifications = () => {
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
                 <header className="hidden lg:flex sticky top-0 z-30 bg-[#F8F9FA] border-b border-gray-100/80 px-4 md:px-8 py-5 items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-1 sm:gap-2 flex-wrap">
-                <span className="truncate">Notifications</span>
-                <Dot size={20} className="text-gray-400 flex-shrink-0" />
-                <span className="text-gray-500 font-medium text-lg md:text-xl flex-shrink-0">
-                  {filteredNotifications.length} items
-                </span>
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Bell size={20} className="text-gray-600" />
-          </div>
-        </header>
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
+                            <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-1 sm:gap-2 flex-wrap">
+                                <span className="truncate">Notifications</span>
+                                <Dot size={20} className="text-gray-400 flex-shrink-0" />
+                                <span className="text-gray-500 font-medium text-lg md:text-xl flex-shrink-0">
+                                    {filteredNotifications.length} items
+                                </span>
+                            </h1>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Bell size={20} className="text-gray-600" />
+                    </div>
+                </header>
                 <header className="sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md border-b border-gray-100/80 px-4 md:px-8 py-5 flex items-center justify-between gap-4 shadow-xs">
                     <div className="mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>

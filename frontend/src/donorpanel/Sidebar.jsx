@@ -112,7 +112,14 @@ const Sidebar = ({ activeTab = "Dashboard", setActiveTab, isOpen, setIsOpen }) =
                 <p className="text-white/90">A Better Tomorrow.</p>
               </div>
 
-              <button className="w-full py-2 px-3 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#10B981]/25 hover:scale-[1.02] cursor-pointer">
+              <button 
+                onClick={() => {
+                  navigate('/donordashboard?tab=Explore%20Campaigns');
+                  if (setActiveTab) setActiveTab("Explore Campaigns");
+                  if (setIsOpen) setIsOpen(false);
+                }}
+                className="w-full py-2 px-3 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#10B981]/25 hover:scale-[1.02] cursor-pointer"
+              >
                 <span>Explore Campaigns</span>
                 <ArrowRight size={12} />
               </button>

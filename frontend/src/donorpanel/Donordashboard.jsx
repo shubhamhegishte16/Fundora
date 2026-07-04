@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import ExploreCampaigns from "./ExploreCampaigns";
 import SavedCampaigns from "./SavedCampaigns";
@@ -26,6 +26,7 @@ const EmptyState = ({ icon, title, sub }) => (
 
 const DonorPanel = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(location.search).get("tab") || "Dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user] = useState(() => { try { const u = localStorage.getItem("user"); return u ? JSON.parse(u) : { name: "Arjun Sharma" }; } catch { return { name: "Arjun Sharma" }; } });
@@ -96,17 +97,19 @@ const DonorPanel = () => {
             <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-brand-text p-2 hover:bg-slate-50 rounded-xl transition-all cursor-pointer"><Menu size={24} /></button>
             {activeTab === "Dashboard" && (
               <div>
-                <h2 className="text-lg sm:text-2xl font-black text-brand-text flex items-center gap-2">Welcome back, {user.name.split(" ")[0]}! <span className="animate-wiggle">👋</span></h2>
+                <h2 className="text-lg sm:text-2xl font-black text-brand-text flex items-center gap-2">Welcome, {user.name}! <span className="animate-wiggle">👋</span></h2>
                 <p className="text-xs sm:text-sm text-brand-secondary font-medium mt-0.5">Thank you for being a part of change.</p>
               </div>
             )}
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
-            <button className="relative text-brand-text p-2.5 hover:bg-slate-50 rounded-full transition-all cursor-pointer border border-brand-border/60">
+            <button onClick={() => navigate('/donor-Notifications')} className="relative text-brand-text p-2.5 hover:bg-slate-50 rounded-full transition-all cursor-pointer border border-brand-border/60">
               <Bell size={20} /><span className="absolute top-2 right-2 w-2.5 h-2.5 bg-brand-error rounded-full ring-2 ring-white" />
             </button>
             <div className="flex items-center gap-3 border-l border-brand-border/60 pl-4 sm:pl-6">
-              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop" alt={user.name} className="w-10 h-10 shrink-0 rounded-full border border-brand-border/60 object-cover shadow-sm" />
+              <div className="w-10 h-10 shrink-0 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-lg shadow-sm border border-brand-border/60">
+                {user?.name ? user.name.charAt(0).toUpperCase() : "D"}
+              </div>
               <div className="hidden sm:block leading-none">
                 <h4 className="text-sm font-bold text-brand-text">{user.name}</h4>
                 <p className="text-[11px] text-brand-secondary font-semibold uppercase mt-0.5 tracking-wider">Donor</p>
@@ -140,7 +143,7 @@ const DonorPanel = () => {
                 <div className="bg-card-white border border-brand-border/60 rounded-2xl p-4 sm:p-6 shadow-sm lg:col-span-3 flex flex-col">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-black text-brand-text">Recent Donations</h3>
-                    <a href="#all-donations" className="text-xs font-bold text-[#10B981] hover:text-[#059669] flex items-center gap-0.5 transition-colors"><span>View All</span><ChevronRight size={14} /></a>
+                    <button onClick={() => { setActiveTab("My Donations"); navigate('/donordashboard?tab=My%20Donations'); }} className="text-xs font-bold text-[#10B981] hover:text-[#059669] flex items-center gap-0.5 transition-colors cursor-pointer"><span>View All</span><ChevronRight size={14} /></button>
                   </div>
                   <div className="space-y-4 flex-1">
                     {recentDonations.length === 0
@@ -165,7 +168,7 @@ const DonorPanel = () => {
                         ))
                     }
                   </div>
-                  <button className="w-full mt-6 py-3 bg-[#E1FDEC]/80 hover:bg-[#E1FDEC] text-[#059669] font-bold text-xs rounded-xl shadow-xs transition-all active:scale-[0.99] cursor-pointer">View All Donations →</button>
+                  <button onClick={() => { setActiveTab("My Donations"); navigate('/donordashboard?tab=My%20Donations'); }} className="w-full mt-6 py-3 bg-[#E1FDEC]/80 hover:bg-[#E1FDEC] text-[#059669] font-bold text-xs rounded-xl shadow-xs transition-all active:scale-[0.99] cursor-pointer">View All Donations →</button>
                 </div>
 
                 {/* Right Column */}
@@ -233,7 +236,7 @@ const DonorPanel = () => {
                                   </div>
                                 </div>
                               </div>
-                              <button className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all whitespace-nowrap cursor-pointer">Donate</button>
+                              <button onClick={() => { setActiveTab("Explore Campaigns"); navigate('/donordashboard?tab=Explore%20Campaigns'); }} className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#10B981] hover:bg-[#059669] text-white font-bold text-[10px] rounded-lg shadow-xs hover:shadow-sm transition-all whitespace-nowrap cursor-pointer">Donate</button>
                             </div>
                           ))
                       }

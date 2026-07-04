@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Menu, X, ArrowRight, Award, Flame, Sprout, Trees, Globe, Zap, Heart, Users, Bell, Star } from "lucide-react";
 import Sidebar from "./Sidebar";
 
 const DonorReward = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("Rewards & Badges");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [user] = useState(() => { try { const u = localStorage.getItem("user"); return u ? JSON.parse(u) : { name: "Arjun Sharma" }; } catch { return { name: "Arjun Sharma" }; } });
 
     const lifetimePoints = 2450;
 
@@ -65,18 +68,17 @@ const DonorReward = () => {
 
                     {/* User Actions Account Node Block */}
                     <div className="flex items-center gap-4 shrink-0">
-                        <button className="w-10 h-10 rounded-full border border-gray-100 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 relative transition-colors shadow-xs">
+                        <button onClick={() => navigate('/donor-Notifications')} className="w-10 h-10 rounded-full border border-gray-100 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 relative transition-colors shadow-xs cursor-pointer">
                             <Bell size={18} />
                             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
                         </button>
+                        {/* Profile Details */}
                         <div className="flex items-center gap-2.5 pl-1">
-                            <img
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
-                            />
+                            <div className="w-10 h-10 shrink-0 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-lg shadow-xs border border-gray-100">
+                                {user?.name ? user.name.charAt(0).toUpperCase() : "D"}
+                            </div>
                             <div className="hidden sm:block leading-none">
-                                <span className="block font-bold text-xs text-gray-900">Arjun Sharma</span>
+                                <span className="block font-bold text-xs text-gray-900">{user.name}</span>
                                 <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Donor</span>
                             </div>
                         </div>
