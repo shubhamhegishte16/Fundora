@@ -24,6 +24,11 @@ import adminUserRoutes from "./routes/adminUserRoutes.js";
 import adminKycRoutes from "./routes/adminKycRoutes.js";
 import adminFraudRoutes from "./routes/adminFraudRoutes.js";
 import adminNotificationRoutes from "./routes/adminNotificationRoutes.js";
+// add to imports, right after adminNotificationRoutes:
+import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
+
+// add to mounts, right after adminNotificationRoutes mount:
+
 // ...
 
 dotenv.config();
@@ -62,6 +67,7 @@ app.use("/api/admin/kyc", adminKycRoutes);
 app.use("/api/admin/fraud", adminFraudRoutes);
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/admin", adminUserRoutes);
+app.use("/api/admin/analytics", adminAnalyticsRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
