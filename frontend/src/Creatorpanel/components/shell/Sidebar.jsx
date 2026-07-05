@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '../../icons.jsx';
 
 export const NAV_ITEMS = [
@@ -16,10 +17,18 @@ export const NAV_ITEMS = [
 /**
  * Sidebar
  * Brand header, primary nav (active state driven by `activePage`),
- * plant illustration + logout. Renders as a fixed column on desktop
+ * nature photo + logout. Renders as a fixed column on desktop
  * and a slide-in drawer on mobile.
  */
 export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('creatorToken');
+    localStorage.removeItem('creator');
+    navigate('/signup');
+  };
+
   const body = (
     <div className="flex h-full w-full flex-col bg-white">
       <div className="relative bg-emerald-700 px-6 py-7">
@@ -49,12 +58,20 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
         })}
       </nav>
 
-      <div className="relative m-4 mt-auto overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-50 via-emerald-50/60 to-emerald-50">
-        <div className="flex h-36 w-full items-center justify-center">
-          <Icon.Leaf className="h-12 w-12 text-emerald-600/70" />
+      <div className="relative m-4 mt-auto overflow-hidden rounded-2xl">
+        <div className="h-36 w-full">
+          <img
+            src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&auto=format&fit=crop&q=60"
+            alt=""
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/10" />
         </div>
         <div className="absolute inset-x-0 bottom-3 flex justify-center">
-          <button className="rounded-full bg-emerald-600 px-8 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700">
+          <button
+            onClick={handleLogout}
+            className="rounded-full bg-emerald-600 px-8 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+          >
             Logout
           </button>
         </div>

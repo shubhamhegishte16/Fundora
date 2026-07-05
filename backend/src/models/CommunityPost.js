@@ -31,9 +31,10 @@ const communityPostSchema = new mongoose.Schema(
 );
 
 // Keeps authorModel in sync with authorType so callers only ever need to set authorType.
-communityPostSchema.pre('validate', function (next) {
+// Synchronous, no `next` callback — Mongoose 7+ dropped callback-style
+// middleware, so a declared `next` parameter here is not a real function.
+communityPostSchema.pre('validate', function () {
   this.authorModel = this.authorType === 'creator' ? 'Creator' : 'Donor';
-  next();
 });
 
 communityPostSchema.index({ creator: 1, createdAt: -1 });

@@ -17,9 +17,8 @@ const communityLikeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-communityLikeSchema.pre('validate', function (next) {
+communityLikeSchema.pre('validate', function () {
   this.authorModel = this.authorType === 'creator' ? 'Creator' : 'Donor';
-  next();
 });
 
 communityLikeSchema.index({ post: 1, authorType: 1, authorId: 1 }, { unique: true });

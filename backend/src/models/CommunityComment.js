@@ -23,9 +23,8 @@ const communityCommentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-communityCommentSchema.pre('validate', function (next) {
+communityCommentSchema.pre('validate', function () {
   this.authorModel = this.authorType === 'creator' ? 'Creator' : 'Donor';
-  next();
 });
 
 communityCommentSchema.index({ post: 1, createdAt: 1 });

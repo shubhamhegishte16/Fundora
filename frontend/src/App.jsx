@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./LandingPage"; // ← new landing page
-import BrowseNoLogin from "./BrowseNoLogin";
+import BrowseNoLogin from "./BrowseNologin";
 
 
 import SignupFlow from "./components/SignupFlow";
