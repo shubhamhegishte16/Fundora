@@ -14,7 +14,7 @@ import {
 } from '../controllers/donationController.js';
 import { 
     getRecurringDetails,
-    seedRecurringDonation 
+    // seedRecurringDonation 
 } from '../controllers/recurringController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -35,6 +35,6 @@ router.get('/donations/history', protect, getDonationHistory);
 
 // ==================== RECURRING ROUTES ====================
 router.get('/recurring', protect, getRecurringDetails);
-router.post('/recurring/seed', protect, seedRecurringDonation);
+// router.post('/recurring/seed', protect, seedRecurringDonation);
 
 export default router;

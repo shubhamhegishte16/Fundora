@@ -42,6 +42,10 @@ import {
     getDonationStats,
     getRecurringDetails
 } from "../../services/donorProfileService.js";
+import myDonations from "./MyDonations.jsx";
+import notifications from "./donorNotifications.jsx";
+import rewards from "./DonorRewardSection.jsx";
+import { useNavigate } from "react-router-dom";
 
 // --- Badge Configuration ---
 const BADGE_CONFIG = {
@@ -167,6 +171,8 @@ const DonorProfile = () => {
         isRecurring: false
     });
     const [badgesLoading, setBadgesLoading] = useState(true);
+
+    const navigate = useNavigate();
 
     // ==================== FETCH ALL DATA ====================
     useEffect(() => {
@@ -473,9 +479,18 @@ const DonorProfile = () => {
     };
 
     const buttons = [
-        { label: "Donation", action: () => console.log("Go to Donation") },
-        { label: "History", action: () => console.log("Go to History") },
-        { label: "My Rewards", action: () => console.log("Go to Rewards") }
+        {
+            label: "My Donation",
+            path: "/donordashboard?tab=My%20Donations"  
+        },
+        {
+            label: "Notifications",
+            path: "/donor-Notifications"  
+        },
+        {
+            label: "My Rewards",
+            path: "/donorreward"  
+        }
     ];
 
     if (loading) {
@@ -572,7 +587,7 @@ const DonorProfile = () => {
                         </div>
                     )}
 
-                    {/* User Stats - NOW WITH REAL DATA */}
+                    {/* User Stats  */}
                     <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 px-4 md:px-8 py-6">
                         <div className="flex justify-center gap-3">
                             <div className="flex items-center justify-center flex-shrink-0">
@@ -599,7 +614,7 @@ const DonorProfile = () => {
                     {!isProfileComplete && user && (
                         <div className="px-4 md:px-8 pb-4">
                             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start gap-3">
-                                <div className="text-yellow-600 text-lg">⚠️</div>
+                                <div className="text-yellow-600 text-lg">Caution</div>
                                 <div className="flex-1">
                                     <p className="text-sm text-yellow-800 font-medium">Profile Incomplete</p>
                                     <p className="text-xs text-yellow-700 mt-1">
@@ -769,11 +784,13 @@ const DonorProfile = () => {
                                 {buttons.map((item) => (
                                     <button
                                         key={item.label}
-                                        onClick={item.action}
+                                        onClick={() => navigate(item.path)}
                                         className="w-full bg-[#00a86b] hover:bg-[#00965e] text-white text-[13px] font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-colors shadow-sm cursor-pointer"
                                     >
                                         <span>{item.label}</span>
-                                        <span className="text-[15px] font-light opacity-90">→</span>
+                                        <span className="text-[15px] font-light opacity-90">
+                                            <ArrowRight size={15} />
+                                        </span>
                                     </button>
                                 ))}
                             </div>
@@ -808,8 +825,8 @@ const DonorProfile = () => {
                                             <div
                                                 key={badge.name}
                                                 className={`relative flex flex-col items-center p-3 rounded-lg transition-all duration-300 ${badge.unlocked
-                                                        ? 'bg-gradient-to-br from-[#00a86b]/10 to-[#00a86b]/5 border border-[#00a86b]/30 hover:shadow-md'
-                                                        : 'bg-gray-50 border border-gray-200 opacity-60'
+                                                    ? 'bg-gradient-to-br from-[#00a86b]/10 to-[#00a86b]/5 border border-[#00a86b]/30 hover:shadow-md'
+                                                    : 'bg-gray-50 border border-gray-200 opacity-60'
                                                     }`}
                                             >
                                                 <div className={`text-3xl mb-1 ${badge.unlocked ? '' : 'filter blur-[1px]'}`}>
