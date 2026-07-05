@@ -31,7 +31,8 @@ import {
     Sprout,
     TreeDeciduous,
     Gem,
-    Cross
+    Cross,
+    LogOut
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import {
@@ -398,6 +399,17 @@ const DonorProfile = () => {
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userData');
+
+        // Clear any other stored data
+        sessionStorage.clear();
+
+        navigate('/login');
+    };
+
     const saveProfileUpdates = async () => {
         try {
             setSaveError(null);
@@ -481,15 +493,15 @@ const DonorProfile = () => {
     const buttons = [
         {
             label: "My Donation",
-            path: "/donordashboard?tab=My%20Donations"  
+            path: "/donordashboard?tab=My%20Donations"
         },
         {
             label: "Notifications",
-            path: "/donor-Notifications"  
+            path: "/donor-Notifications"
         },
         {
             label: "My Rewards",
-            path: "/donorreward"  
+            path: "/donorreward"
         }
     ];
 
@@ -793,6 +805,16 @@ const DonorProfile = () => {
                                         </span>
                                     </button>
                                 ))}
+
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full bg-red-500 hover:bg-red-600 text-white text-[13px] font-bold py-2.5 px-4 rounded-xl flex items-center justify-between transition-colors shadow-sm cursor-pointer mt-2"
+                                >
+                                    <span>Logout</span>
+                                    <span className="text-[15px] font-light opacity-90">
+                                        <LogOut size={15} />
+                                    </span>
+                                </button>
                             </div>
                         </div>
                     </div>
