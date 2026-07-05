@@ -19,7 +19,7 @@ const PAGES = {
   donations: { component: Donations, title: 'Donations', subtitle: 'Every contribution to your campaigns, in one place' },
   create: { component: CreateCampaign, title: 'Create Campaign', subtitle: 'Launch a new campaign and start raising funds' },
   rewards: { component: RewardsBadges, title: 'Rewards & Badges', subtitle: 'Track your progress and unlock new milestones' },
-  following: { component: FollowingCreators, title: 'Following Creators', subtitle: 'Organizations and creators you support' },
+  following: { component: FollowingCreators, title: 'Your Followers', subtitle: 'Donors who follow your campaigns' },
   community: { component: Community, title: 'Community', subtitle: 'Updates and discussions from creators you follow' },
   notifications: { component: Notifications, title: 'Notifications', subtitle: 'Stay up to date with your campaign activity' },
   settings: { component: ProfileSettings, title: 'Profile Settings', subtitle: 'Manage your account and preferences' },
