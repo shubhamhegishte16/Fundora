@@ -39,6 +39,7 @@ const SignupFlow = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const navigate = useNavigate();
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -186,7 +187,7 @@ const SignupFlow = () => {
       setIsLoading(true);
       setSubmitError(null);
       try {
-        const response = await axios.post("http://localhost:5000/api/auth/register", {
+        const response = await axios.post(`${API_BASE}/auth/register`, {
           name: formData.fullName,
           email: formData.email,
           password: formData.donorPassword,
@@ -236,7 +237,7 @@ const SignupFlow = () => {
         }
 
         const response = await axios.post(
-          "http://localhost:5000/api/creator/auth/register",
+          `${API_BASE}/creator/auth/register`,
           data,
           { headers: { "Content-Type": "multipart/form-data" } }
         );

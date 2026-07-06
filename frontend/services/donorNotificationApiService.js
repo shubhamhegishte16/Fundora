@@ -9,7 +9,8 @@ const getAuthHeaders = () => {
   };
 };
 
-const API_URL = 'http://localhost:5000/api/donor/notifications';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = `${API_BASE}/donor/notifications`;
 
 export const getDonorNotifications = async () => {
   const response = await axios.get(API_URL, getAuthHeaders());

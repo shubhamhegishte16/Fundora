@@ -9,8 +9,8 @@ const getAuthHeaders = () => {
     }
   };
 };
-
-const API_URL = 'http://localhost:5000/api/donor/creators';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = `${API_BASE}/donor/creators`;
 
 export const discoverCreators = async (search = '', category = 'All Categories') => {
   const params = new URLSearchParams();
