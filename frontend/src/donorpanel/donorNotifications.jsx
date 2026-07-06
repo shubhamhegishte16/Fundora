@@ -197,7 +197,7 @@ const Notifications = () => {
                         <div className="flex-1">
                             <span className="font-bold text-gray-700 text-sm">Notification</span>
                         </div>
-                        <div className="flex items-center space-x-16 mr-10 w-48 shrink-0 justify-between">
+                        <div className="flex items-center space-x-16 mr-2 w-37 shrink-0 justify-between">
                             <span className="font-bold text-gray-700 text-sm">Type</span>
                             <span className="font-bold text-gray-700 text-sm">Status</span>
                         </div>

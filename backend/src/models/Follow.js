@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
  */
 const followSchema = new mongoose.Schema(
   {
-    donor: { type: mongoose.Schema.Types.ObjectId, ref: 'Donor', required: true, index: true },
+    donor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     creator: { type: mongoose.Schema.Types.ObjectId, ref: 'Creator', required: true, index: true },
   },
   { timestamps: true } // createdAt = "followed since"

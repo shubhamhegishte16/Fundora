@@ -60,7 +60,7 @@ app.use("/api/creator/donations", donationRoutes);
 app.use("/api/creator/notifications", notificationRoutes);
 app.use("/api/creator/badges", badgeRoutes);
 app.use("/api/creator/community", communityRoutes);
-app.use("/api/creator/followers", followerRoutes);
+app.use("/api/creator", followerRoutes);
 app.use("/api/donor", donorProfileRoute);
 app.use('/api/donor/badges', badgeRoutes);
 app.use("/api/donor/campaigns", donorCampaignRoutes);

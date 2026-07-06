@@ -517,7 +517,7 @@ const DonorReward = () => {
                                 </div>
                             </div>
 
-                            <p className="text-center text-sm font-semibold text-[#10B981] mb-6">Payment Successful! 🎉</p>
+                            <p className="text-center text-sm font-semibold text-[#10B981] mb-6">Payment Successful!</p>
 
                             <div className="space-y-4">
                                 <div className="flex justify-between text-sm border-b border-gray-200 pb-2">
