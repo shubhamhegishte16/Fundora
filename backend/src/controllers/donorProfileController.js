@@ -2,6 +2,7 @@
 import User from "../models/User.js";
 import DonorProfile from "../models/DonorProfile.js";
 import bcrypt from "bcryptjs";
+import { createDonorNotification } from "../services/donorNotificationService.js";
 
 export const getProfile = async (req, res) => {
   try {
@@ -82,6 +83,15 @@ export const updateProfile = async (req, res) => {
     if (gender !== undefined) profile.gender = gender;
 
     await profile.save();
+
+    // Trigger notification
+    await createDonorNotification({
+      donorId: userId,
+      type: 'profile_change',
+      title: 'Profile Updated',
+      detail: 'Your profile information has been successfully updated.',
+      category: 'Activity'
+    });
 
     // Return updated profile
     res.status(200).json({

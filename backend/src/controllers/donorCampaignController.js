@@ -1,5 +1,6 @@
 import Campaign from '../models/Campaign.js';
 import DonorProfile from '../models/DonorProfile.js';
+import { createDonorNotification } from '../services/donorNotificationService.js';
 
 export const getAllActiveCampaigns = async (req, res) => {
   try {
@@ -62,6 +63,17 @@ export const toggleSaveCampaign = async (req, res) => {
     }
     
     await donorProfile.save();
+
+    if (isSaved) {
+      await createDonorNotification({
+        donorId: req.user._id,
+        type: 'saved_campaign',
+        title: 'Campaign Saved',
+        detail: 'You have successfully saved a campaign to your list.',
+        category: 'Activity',
+        relatedCampaign: campaignId
+      });
+    }
 
     res.status(200).json({
       success: true,

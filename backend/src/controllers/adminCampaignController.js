@@ -1,5 +1,7 @@
 import Campaign from '../models/Campaign.js';
 import Notification from '../models/Notification.js';
+import Follow from '../models/Follow.js';
+import { createDonorNotification } from '../services/donorNotificationService.js';
 
 // ─── GET /api/admin/campaigns/pending ──────────────────────────────────────
 // All campaigns currently awaiting admin review.
@@ -51,6 +53,22 @@ export const approveCampaign = async (req, res) => {
       detail: `Your campaign "${campaign.title}" has been approved and is now live.`,
       relatedCampaign: campaign._id,
     });
+
+    // Notify all followers
+    const followers = await Follow.find({ creator: campaign.creator });
+    for (const f of followers) {
+      if (f.donor) {
+        await createDonorNotification({
+          donorId: f.donor,
+          type: 'new_campaign',
+          title: 'New Campaign from a Creator You Follow',
+          detail: `A new campaign "${campaign.title}" is now live!`,
+          category: 'Activity',
+          relatedCampaign: campaign._id,
+          relatedCreator: campaign.creator
+        });
+      }
+    }
 
     res.json({ success: true, campaign });
   } catch (error) {

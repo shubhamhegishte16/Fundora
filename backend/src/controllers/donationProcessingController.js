@@ -3,6 +3,7 @@ import Donation from '../models/Donation.js';
 import Campaign from '../models/Campaign.js';
 import Donor from '../models/Donor.js';
 import { notifyAdmins } from '../utils/notifyAdmins.js';
+import { createDonorNotification } from '../services/donorNotificationService.js';
 
 // Donations at or above this amount trigger a "large donation" admin notification.
 const LARGE_DONATION_THRESHOLD = 10000;
@@ -85,6 +86,15 @@ export const processDonation = async (req, res) => {
       isAnonymous: Boolean(isAnonymous),
       method: paymentMethod || 'Other',
       status: 'completed',
+    });
+
+    await createDonorNotification({
+      donorId: donor._id,
+      type: 'donation',
+      title: 'Donation Successful',
+      detail: `Your donation of ₹${donation.amount.toLocaleString('en-IN')} to "${campaign.title}" was successful.`,
+      category: 'Receipt',
+      relatedCampaign: campaign._id
     });
 
     if (donation.amount >= LARGE_DONATION_THRESHOLD) {

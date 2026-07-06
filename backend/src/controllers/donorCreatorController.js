@@ -2,6 +2,7 @@ import Creator from '../models/Creator.js';
 import Follow from '../models/Follow.js';
 import Campaign from '../models/Campaign.js';
 import mongoose from 'mongoose';
+import { createDonorNotification } from '../services/donorNotificationService.js';
 
 // Mock data generator for fields not yet in DB
 const getMockStats = (creatorId) => {
@@ -196,6 +197,17 @@ export const toggleFollowCreator = async (req, res) => {
       return res.json({ success: true, message: 'Unfollowed creator successfully', isFollowing: false });
     } else {
       await Follow.create({ donor: donorId, creator: creatorId });
+      
+      // Trigger notification
+      await createDonorNotification({
+        donorId,
+        type: 'follow',
+        title: 'Creator Followed',
+        detail: 'You are now following a new creator and will receive updates on their campaigns.',
+        category: 'Activity',
+        relatedCreator: creatorId
+      });
+
       return res.json({ success: true, message: 'Followed creator successfully', isFollowing: true });
     }
   } catch (error) {

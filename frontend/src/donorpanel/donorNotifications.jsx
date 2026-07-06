@@ -3,92 +3,77 @@ import {
     Search,
     Bell,
     ChevronDown,
-    Eye,
-    MessageSquare,
-    Award,
-    Receipt,
-    Heart,
+    Filter,
     Menu,
     X,
-    Dot,
-    Filter,
-    ChevronUp
+    Loader2
 } from "lucide-react";
 import Sidebar from "./Sidebar";
+import { getDonorNotifications, markNotificationAsRead } from "../../services/donorNotificationApiService.js";
+import { getProfile } from "../../services/donorProfileService.js";
 
 const Notifications = () => {
     const [activeTab, setActiveTab] = useState("Notifications");
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [filter, setFilter] = useState("all");
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [donorName, setDonorName] = useState("Donor");
 
-    const [notifications] = useState([
-        {
-            id: 1,
-            title: "Receipt for Empower Rural Development",
-            type: "Activity",
-            status: "Viewed",
-            category: "Receipt"
-        },
-        {
-            id: 2,
-            title: "Thanking Message from creator Sujeet",
-            type: "Message",
-            status: "Not Viewed",
-            category: "Message"
-        },
-        {
-            id: 3,
-            title: "You earned a new Badge",
-            type: "Activity",
-            status: "Not Viewed",
-            category: "Badge"
-        },
-        {
-            id: 4,
-            title: "Your payment is successful view receipt",
-            type: "Activity",
-            status: "Not Viewed",
-            category: "Payment"
-        },
-        {
-            id: 5,
-            title: "Only one more donation to unlock new badge",
-            type: "Activity",
-            status: "Not Viewed",
-            category: "Badge"
-        },
-        {
-            id: 6,
-            title: "Campaign update: New milestone reached",
-            type: "Activity",
-            status: "Viewed",
-            category: "Activity"
-        },
-        {
-            id: 7,
-            title: "Thank you for your generous donation",
-            type: "Activity",
-            status: "Viewed",
-            category: "Activity"
-        },
-        {
-            id: 8,
-            title: "Weekly donation report available",
-            type: "Activity",
-            status: "Viewed",
-            category: "Activity"
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                // Fetch profile for dynamic name
+                const profileRes = await getProfile();
+                if (profileRes.success && profileRes.user) {
+                    setDonorName(profileRes.user.name || "Donor");
+                }
+                
+                // Fetch notifications
+                const notifRes = await getDonorNotifications();
+                if (notifRes.success) {
+                    setNotifications(notifRes.notifications);
+                }
+            } catch (error) {
+                console.error("Failed to load notifications data", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
+    }, []);
+
+    const handleMarkAsRead = async (id) => {
+        try {
+            await markNotificationAsRead(id);
+            setNotifications(prev => prev.map(n => 
+                n._id === id ? { ...n, isRead: true } : n
+            ));
+        } catch (error) {
+            console.error("Failed to mark notification as read", error);
         }
-    ]);
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            await markNotificationAsRead('all');
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+        }
+    };
 
     const filteredNotifications = notifications.filter(notification => {
-        const matchesFilter = filter === 'all' || notification.status === filter;
+        const matchesFilter = filter === 'all' || 
+            (filter === 'unread' && !notification.isRead) || 
+            (filter === 'read' && notification.isRead);
         const matchesSearch = notification.title.toLowerCase().includes(searchTerm.toLowerCase());
         return matchesFilter && matchesSearch;
     });
 
-    const getStatusColor = (status) => {
-        return status === 'Viewed' ? 'text-gray-600' : 'text-yellow-600 font-medium';
+    const getStatusColor = (isRead) => {
+        return isRead ? 'text-gray-600' : 'text-[#10B981] font-bold';
     };
 
     const getIconBg = (category) => {
@@ -100,16 +85,20 @@ const Notifications = () => {
                 return 'bg-blue-100 text-blue-600';
             case 'Badge':
                 return 'bg-purple-100 text-purple-600';
+            case 'Activity':
+                return 'bg-blue-100 text-blue-600';
             default:
                 return 'bg-gray-100 text-gray-600';
         }
     };
 
+    const unreadCount = notifications.filter(n => !n.isRead).length;
+
     return (
         <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row font-sans antialiased">
             {/* Mobile Header */}
             <div className="lg:hidden w-full bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xs">
-                <span className="font-bold text-gray-900 text-lg">Elpis Panel</span>
+                <span className="font-bold text-gray-900 text-lg">Fundora Panel</span>
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 bg-gray-50 border border-gray-100 rounded-xl"
@@ -137,45 +126,28 @@ const Notifications = () => {
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
-                <header className="hidden lg:flex sticky top-0 z-30 bg-[#F8F9FA] border-b border-gray-100/80 px-4 md:px-8 py-5 items-center justify-between gap-4 shadow-sm">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="min-w-0 flex-1">
-                            <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-1 sm:gap-2 flex-wrap">
-                                <span className="truncate">Notifications</span>
-                                <Dot size={20} className="text-gray-400 flex-shrink-0" />
-                                <span className="text-gray-500 font-medium text-lg md:text-xl flex-shrink-0">
-                                    {filteredNotifications.length} items
-                                </span>
-                            </h1>
+                <header className="sticky top-0 z-20 bg-white border-b border-gray-100/80 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden text-gray-900 p-2 hover:bg-slate-50 rounded-xl transition-all cursor-pointer">
+                            <Menu size={24} />
+                        </button>
+                        <div>
+                            <h2 className="text-lg sm:text-2xl font-black text-gray-900">Notifications</h2>
+                            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
+                                Stay updated with your latest messages and responses.
+                            </p>
                         </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Bell size={20} className="text-gray-600" />
-                    </div>
-                </header>
-                <header className="sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md border-b border-gray-100/80 px-4 md:px-8 py-5 flex items-center justify-between gap-4 shadow-xs">
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
-                        <p className="text-gray-600 text-sm">
-                            Stay updated with your latest messages and responses.
-                        </p>
                     </div>
 
                     {/* User Actions Account Node Block */}
-                    <div className="flex items-center gap-4 shrink-0">
-                        <button className="w-10 h-10 rounded-full border border-gray-100 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 relative transition-colors shadow-xs">
-                            <Bell size={18} />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                        </button>
-                        <div className="flex items-center gap-2.5 pl-1">
-                            <img
-                                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-                                alt="User Avatar"
-                                className="w-10 h-10 rounded-full object-cover border border-gray-100 shadow-xs"
-                            />
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="flex items-center gap-3 pl-1 sm:pl-0">
+                            <div className="w-10 h-10 shrink-0 rounded-full bg-[#10B981] text-white flex items-center justify-center font-bold text-lg shadow-sm border border-gray-100">
+                                {donorName ? donorName.charAt(0).toUpperCase() : "D"}
+                            </div>
                             <div className="hidden sm:block leading-none">
-                                <span className="block font-bold text-xs text-gray-900">Arjun Sharma</span>
-                                <span className="block text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Donor</span>
+                                <h4 className="text-sm font-bold text-gray-900">{donorName}</h4>
+                                <p className="text-[11px] text-gray-500 font-semibold uppercase mt-0.5 tracking-wider">Donor</p>
                             </div>
                         </div>
                     </div>
@@ -184,81 +156,101 @@ const Notifications = () => {
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 md:p-8">
 
-
-                    {/* Search Bar */}
-                    <div className="flex items-center gap-3 mb-6">
+                    {/* Search Bar & Filters */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
                         {/* Search Bar - Takes remaining space */}
                         <div className="relative flex-1">
                             <input
                                 type="text"
-                                placeholder="Search"
+                                placeholder="Search notifications..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00a86b] focus:border-transparent bg-white"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-[#10B981] bg-white text-sm font-medium transition-colors"
                             />
                             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
                         </div>
 
-                        {/* Filter Button */}
-                        <button className="p-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex-shrink-0">
-                            <Filter className="w-5 h-5 text-gray-600" />
-                        </button>
-
-                        {/* Type Dropdown Button */}
-                        <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 flex-shrink-0">
-                            <span className="text-sm font-medium">Type</span>
-                            <ChevronDown className="w-4 h-4 text-gray-400" />
-                        </button>
+                        <div className="flex gap-2">
+                            <select 
+                                className="px-4 py-2.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 outline-none focus:border-[#10B981] bg-white cursor-pointer"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                            >
+                                <option value="all">All Status</option>
+                                <option value="unread">Unread</option>
+                                <option value="read">Read</option>
+                            </select>
+                            
+                            {unreadCount > 0 && (
+                                <button 
+                                    onClick={handleMarkAllAsRead}
+                                    className="px-4 py-2.5 bg-[#10B981] hover:bg-emerald-600 text-white rounded-lg transition-colors text-sm font-bold cursor-pointer whitespace-nowrap"
+                                >
+                                    Mark all as read
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Notification Headers */}
-                    <div className="flex items-center justify-between px-4 py-2 bg-white rounded-t-lg border-b border-gray-200">
+                    <div className="hidden sm:flex items-center justify-between px-4 py-3 bg-white rounded-t-xl border-b border-gray-200 shadow-sm">
                         <div className="flex-1">
-                            <span className="font-medium text-gray-700">Notification</span>
+                            <span className="font-bold text-gray-700 text-sm">Notification</span>
                         </div>
-                        <div className="flex items-center space-x-26 mr-10">
-                            <span className="font-medium text-gray-700">Type</span>
-                            <span className="font-medium text-gray-700">Status</span>
+                        <div className="flex items-center space-x-16 mr-10 w-48 shrink-0 justify-between">
+                            <span className="font-bold text-gray-700 text-sm">Type</span>
+                            <span className="font-bold text-gray-700 text-sm">Status</span>
                         </div>
                     </div>
 
                     {/* Notification Items */}
-                    <div className="bg-white rounded-b-lg shadow-sm">
-                        {filteredNotifications.map((item, index) => (
-                            <div
-                                key={item.id}
-                                className={`flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition ${index !== filteredNotifications.length - 1 ? 'border-b border-gray-100' : ''
-                                    } ${item.status === 'Not Viewed' ? 'bg-blue-50' : ''}`}
-                            >
-                                <div className="flex items-center flex-1 min-w-0">
-                                    <div className={`p-1.5 rounded-full mr-3 flex-shrink-0 ${getIconBg(item.category)}`}>
-                                        {/* {item.icon && <item.icon className="w-4 h-4" />} */}
-                                    </div>
-                                    <span className="text-sm text-gray-800 truncate">{item.title}</span>
-                                </div>
-                                <div className="flex items-center space-x-12 flex-shrink-0 ml-4">
-                                    <span className="text-sm text-gray-600 w-20">{item.type}</span>
-                                    <div className="flex items-center w-24">
-                                        <span className={`text-sm px-2 py-0.5 rounded ${getStatusColor(item.status)}`}>
-                                            {item.status}
-                                        </span>
-                                        {/* <ChevronDown className="w-4 h-4 text-gray-400 ml-1" /> */}
-                                    </div>
-                                </div>
+                    <div className="bg-white sm:rounded-b-xl rounded-xl shadow-sm border border-gray-100">
+                        {loading ? (
+                            <div className="flex justify-center items-center py-16">
+                                <Loader2 className="animate-spin text-[#10B981]" size={32} />
                             </div>
-                        ))}
-
-                        {filteredNotifications.length === 0 && (
+                        ) : filteredNotifications.length === 0 ? (
                             <div className="text-center py-12">
-                                <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                <p className="text-gray-500">No notifications found</p>
+                                <Bell className="w-16 h-16 text-gray-200 mx-auto mb-4" />
+                                <p className="text-gray-500 font-medium">No notifications found</p>
                             </div>
+                        ) : (
+                            filteredNotifications.map((item, index) => (
+                                <div
+                                    key={item._id}
+                                    onClick={() => !item.isRead && handleMarkAsRead(item._id)}
+                                    className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 py-4 sm:py-3 transition cursor-pointer ${
+                                        index !== filteredNotifications.length - 1 ? 'border-b border-gray-100' : ''
+                                    } ${!item.isRead ? 'bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-gray-50'}`}
+                                >
+                                    <div className="flex items-start sm:items-center flex-1 min-w-0 mb-3 sm:mb-0">
+                                        <div className={`p-2 rounded-full mr-3 flex-shrink-0 mt-1 sm:mt-0 ${getIconBg(item.category)}`}>
+                                            <Bell className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-bold text-gray-800">{item.title}</span>
+                                            <span className="text-xs text-gray-500 mt-0.5 pr-4">{item.detail}</span>
+                                            <span className="text-[10px] text-gray-400 mt-1 sm:hidden">
+                                                {new Date(item.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between sm:justify-end space-x-0 sm:space-x-12 flex-shrink-0 sm:w-48 ml-0 sm:ml-4 pl-12 sm:pl-0">
+                                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.category}</span>
+                                        <div className="flex items-center">
+                                            <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${!item.isRead ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                {!item.isRead ? 'New' : 'Viewed'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
 
                     {/* Footer note */}
-                    <div className="mt-6 text-xs text-gray-400 text-center">
-                        Showing {filteredNotifications.length} notifications
+                    <div className="mt-6 text-xs font-medium text-gray-400 text-center">
+                        Showing {filteredNotifications.length} notification{filteredNotifications.length !== 1 ? 's' : ''}
                     </div>
                 </div>
             </div>
