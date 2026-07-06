@@ -39,6 +39,21 @@ const adminSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // --- Added for the admin "Settings > Profile" panel ---
+    phone: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    bio: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

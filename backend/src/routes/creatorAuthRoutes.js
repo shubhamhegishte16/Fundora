@@ -1,7 +1,6 @@
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import {
   registerCreator,
   loginCreator,
@@ -15,18 +14,11 @@ import { protectCreator } from '../middleware/creatorAuth.js';
 import { createImageUpload } from '../middleware/uploadImage.js';
 
 // ─── Multer config for KYC document uploads ───────────────────────────────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../uploads/kyc'));
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `kyc-${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
+// memoryStorage — the file is held in RAM as a Buffer just long enough to be
+// streamed up to Cloudinary in the controller, then discarded. Nothing is
+// written to local disk, so this survives redeploys/restarts and works the
+// same across multiple server instances (see utils/cloudinaryUpload.js).
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowed = /jpeg|jpg|png|pdf/;

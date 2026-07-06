@@ -7,20 +7,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const getToken = () => localStorage.getItem("adminToken");
-
-async function apiRequest(path) {
-  const res = await fetch(`${API_BASE}/api/admin${path}`, {
-    headers: { Authorization: `Bearer ${getToken()}` },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${res.status})`);
-  }
-  return data;
-}
+import adminAxios from "../utils/adminAxios";
 
 const inr = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 const inrCompact = (n) => {
@@ -65,20 +52,20 @@ export default function Dashboard() {
       setError("");
       try {
         const [statsRes, trendRes, catRes, campRes, donRes] = await Promise.all([
-          apiRequest("/dashboard/stats"),
-          apiRequest("/dashboard/donation-trend?months=6"),
-          apiRequest("/dashboard/category-breakdown"),
-          apiRequest("/dashboard/recent-campaigns?limit=4"),
-          apiRequest("/dashboard/recent-donations?limit=3"),
+          adminAxios.get("/dashboard/stats"),
+          adminAxios.get("/dashboard/donation-trend?months=6"),
+          adminAxios.get("/dashboard/category-breakdown"),
+          adminAxios.get("/dashboard/recent-campaigns?limit=4"),
+          adminAxios.get("/dashboard/recent-donations?limit=3"),
         ]);
         if (cancelled) return;
-        setStats(statsRes.stats);
-        setAreaData(trendRes.trend || []);
-        setCategoryData(catRes.breakdown || []);
-        setRecentCampaigns(campRes.campaigns || []);
-        setRecentDonations(donRes.donations || []);
+        setStats(statsRes.data.stats);
+        setAreaData(trendRes.data.trend || []);
+        setCategoryData(catRes.data.breakdown || []);
+        setRecentCampaigns(campRes.data.campaigns || []);
+        setRecentDonations(donRes.data.donations || []);
       } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load dashboard");
+        if (!cancelled) setError(e.response?.data?.message || e.message || "Failed to load dashboard");
       } finally {
         if (!cancelled) setLoading(false);
       }

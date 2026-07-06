@@ -8,7 +8,7 @@ export const NAV_ITEMS = [
   { id: 'donations', label: 'Donations', icon: 'Coins' },
   { id: 'create', label: 'Create Campaigns', icon: 'Plus' },
   { id: 'rewards', label: 'Rewards & Badges', icon: 'Award' },
-  { id: 'following', label: 'Following Creators', icon: 'UserPlus' },
+  { id: 'following', label: 'My Followers', icon: 'UserPlus' },
   { id: 'community', label: 'Community', icon: 'Users' },
   { id: 'notifications', label: 'Notifications', icon: 'Bell' },
   { id: 'settings', label: 'Profile Settings', icon: 'Settings' },

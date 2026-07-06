@@ -38,7 +38,10 @@ const creatorSchema = new mongoose.Schema(
       trim: true,
     },
     idFileUrl: {
-      type: String, // Stored filename / path after file upload
+      type: String, // Cloudinary secure_url after upload — a permanent HTTPS link, not a local path
+    },
+    idFilePublicId: {
+      type: String, // Cloudinary public_id, kept for future deletion/replacement of the file
     },
     address: {
       type: String,
