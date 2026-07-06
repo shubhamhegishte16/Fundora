@@ -1,12 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from '../icons.jsx';
 import Card, { CardHeader } from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Avatar from '../components/ui/Avatar.jsx';
-import { getMyProfile, updateMyProfile, updateNotificationPrefs, changePassword } from '../../../services/profileService.js';
+import { getMyProfile, updateMyProfile, updateNotificationPrefs, changePassword, uploadAvatar } from '../../../services/profileService.js';
 
 const inputClass = 'w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-100';
 const labelClass = 'mb-1.5 block text-sm font-medium text-slate-700';
+
+// Uploaded avatars come back as relative paths like /uploads/avatars/xxx.jpg
+// (served by the backend's static /uploads mount) — resolve those against
+// the API origin; leave already-absolute URLs untouched.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+function resolveImageUrl(url) {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${API_ORIGIN}${url}`;
+}
 
 const PREF_META = [
   { id: 'donations', label: 'New donations', desc: 'Get notified when someone donates to your campaign' },
@@ -37,6 +46,10 @@ export default function ProfileSettings() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState(null);
 
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef(null);
+
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [savingPw, setSavingPw] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
@@ -57,6 +70,7 @@ export default function ProfileSettings() {
             bio: c.bio || '',
           });
           setPrefs(c.notificationPrefs || { donations: true, milestones: true, followers: false, community: true });
+          setAvatarUrl(resolveImageUrl(c.avatarUrl));
         }
       } catch (err) {
         if (isMounted) setError('Could not load your profile. Please try again.');
@@ -68,6 +82,37 @@ export default function ProfileSettings() {
   }, []);
 
   const updateField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileMsg({ type: 'error', text: 'Photo must be 5MB or smaller.' });
+      return;
+    }
+
+    const localPreview = URL.createObjectURL(file);
+    setAvatarUrl(localPreview);
+    setUploadingAvatar(true);
+    setProfileMsg(null);
+    try {
+      const data = await uploadAvatar(file);
+      const resolvedUrl = resolveImageUrl(data.avatarUrl);
+      setAvatarUrl(resolvedUrl);
+
+      // Keep the header/sidebar's stored creator info in sync so the new
+      // photo doesn't disappear until the next full login.
+      try {
+        const stored = JSON.parse(localStorage.getItem('creator')) || {};
+        localStorage.setItem('creator', JSON.stringify({ ...stored, avatarUrl: data.avatarUrl }));
+      } catch { /* localStorage 'creator' missing/corrupt — safe to skip syncing */ }
+    } catch (err) {
+      setAvatarUrl(resolveImageUrl(profile?.avatarUrl));
+      setProfileMsg({ type: 'error', text: 'Could not upload photo. Please try again.' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     setProfileMsg(null);
@@ -137,10 +182,25 @@ export default function ProfileSettings() {
         <Card>
           <CardHeader title="Profile Information" />
           <div className="mt-4 flex items-center gap-4">
-            <Avatar name={form.name} size="xl" tint="dark" />
+            <Avatar name={form.name} src={avatarUrl} size="xl" tint="dark" />
             <div>
-              <Button variant="outline" size="sm" icon={Icon.Camera} disabled>Change Photo</Button>
-              <p className="mt-1.5 text-xs text-slate-400">Photo upload isn't wired up yet.</p>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                icon={Icon.Camera}
+                disabled={uploadingAvatar}
+                onClick={() => avatarInputRef.current?.click()}
+              >
+                {uploadingAvatar ? 'Uploading…' : 'Change Photo'}
+              </Button>
+              <p className="mt-1.5 text-xs text-slate-400">PNG, JPG, or WEBP, up to 5MB.</p>
             </div>
           </div>
 

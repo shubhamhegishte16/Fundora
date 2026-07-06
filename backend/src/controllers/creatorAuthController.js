@@ -245,3 +245,29 @@ export const changeCreatorPassword = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+// ─── POST /api/creator/auth/avatar ────────────────────────────────────────────
+// Separate endpoint from updateCreatorProfile since this one is multipart
+// (multer-handled file), while profile text-field edits stay plain JSON.
+export const uploadCreatorAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file was uploaded' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const creator = await Creator.findByIdAndUpdate(
+      req.user.id,
+      { avatarUrl },
+      { new: true }
+    );
+
+    if (!creator) {
+      return res.status(404).json({ success: false, message: 'Creator not found' });
+    }
+
+    res.status(200).json({ success: true, avatarUrl, creator });
+  } catch (error) {
+    console.error('Creator uploadAvatar error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

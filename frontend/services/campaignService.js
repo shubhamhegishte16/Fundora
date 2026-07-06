@@ -41,9 +41,26 @@ export const getCampaignById = async (id) => {
     }
 };
 
+// If campaignData.coverImageFile is a File, this sends multipart/form-data
+// so the backend's multer middleware can store it; otherwise it sends plain
+// JSON exactly as before.
+function buildPayload(campaignData) {
+    const { coverImageFile, ...rest } = campaignData;
+    if (!(coverImageFile instanceof File)) {
+        return { data: rest, isFormData: false };
+    }
+    const formData = new FormData();
+    Object.entries(rest).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) formData.append(key, value);
+    });
+    formData.append('coverImage', coverImageFile);
+    return { data: formData, isFormData: true };
+}
+
 export const createCampaign = async (campaignData) => {
     try {
-        const response = await api.post('/creator/campaigns', campaignData);
+        const { data, isFormData } = buildPayload(campaignData);
+        const response = await api.post('/creator/campaigns', data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
         return response.data;
     } catch (error) {
         console.error('Error creating campaign:', error);
@@ -53,7 +70,8 @@ export const createCampaign = async (campaignData) => {
 
 export const updateCampaign = async (id, campaignData) => {
     try {
-        const response = await api.put(`/creator/campaigns/${id}`, campaignData);
+        const { data, isFormData } = buildPayload(campaignData);
+        const response = await api.put(`/creator/campaigns/${id}`, data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined);
         return response.data;
     } catch (error) {
         console.error('Error updating campaign:', error);

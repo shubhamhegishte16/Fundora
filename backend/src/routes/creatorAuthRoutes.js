@@ -9,8 +9,10 @@ import {
   updateCreatorProfile,
   updateCreatorNotificationPrefs,
   changeCreatorPassword,
+  uploadCreatorAvatar,
 } from '../controllers/creatorAuthController.js';
 import { protectCreator } from '../middleware/creatorAuth.js';
+import { createImageUpload } from '../middleware/uploadImage.js';
 
 // ─── Multer config for KYC document uploads ───────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
@@ -43,6 +45,8 @@ const upload = multer({
   fileFilter,
 });
 
+const uploadAvatar = createImageUpload('avatars');
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const router = express.Router();
 
@@ -55,5 +59,6 @@ router.get('/me', protectCreator, getCreatorMe);
 router.patch('/me', protectCreator, updateCreatorProfile);
 router.patch('/notification-prefs', protectCreator, updateCreatorNotificationPrefs);
 router.patch('/change-password', protectCreator, changeCreatorPassword);
+router.post('/avatar', protectCreator, uploadAvatar.single('avatar'), uploadCreatorAvatar);
 
 export default router;

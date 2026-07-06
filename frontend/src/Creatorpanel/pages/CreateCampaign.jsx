@@ -9,6 +9,15 @@ const labelClass = 'mb-1.5 block text-sm font-medium text-slate-700';
 
 const CATEGORIES = ['Education', 'Health', 'Environment', 'Disaster Relief', 'Animal Welfare', 'Community'];
 
+// Uploaded cover images come back as relative paths like /uploads/campaigns/xxx.jpg
+// (served by the backend's static /uploads mount) — resolve those against the
+// API origin; leave already-absolute URLs untouched.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+function resolveImageUrl(url) {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${API_ORIGIN}${url}`;
+}
+
 const EMPTY_FORM = {
   title: '',
   organization: '',
@@ -16,7 +25,6 @@ const EMPTY_FORM = {
   description: '',
   goalAmount: '',
   durationDays: '',
-  coverImageUrl: '',
 };
 
 // campaignId is passed in when editing an existing campaign (see CreatorPanelApp.jsx).
@@ -25,6 +33,8 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
   const isEditing = Boolean(campaignId);
 
   const [form, setForm] = useState(EMPTY_FORM);
+  const [coverImageFile, setCoverImageFile] = useState(null);
+  const [coverPreview, setCoverPreview] = useState('');
   const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -52,8 +62,8 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
             durationDays: c.endDate
               ? String(Math.max(0, Math.ceil((new Date(c.endDate) - new Date(c.startDate || c.createdAt)) / (1000 * 60 * 60 * 24))))
               : '',
-            coverImageUrl: c.coverImageUrl || '',
           });
+          setCoverPreview(resolveImageUrl(c.coverImageUrl));
         }
       } catch (err) {
         if (isMounted) setError('Could not load this campaign. Please try again.');
@@ -66,15 +76,29 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
 
   const updateField = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  const handleCoverFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Cover image must be 5MB or smaller.');
+      return;
+    }
+    setCoverImageFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
   const buildPayload = (status) => {
     const payload = {
       title: form.title.trim(),
       description: form.description.trim(),
       category: form.category,
       goalAmount: Number(form.goalAmount) || 0,
-      coverImageUrl: form.coverImageUrl || undefined,
       status,
     };
+
+    if (coverImageFile) {
+      payload.coverImageFile = coverImageFile;
+    }
 
     if (status === 'pending_review') {
       // startDate/endDate get finalized by the admin on approval, but we
@@ -211,20 +235,29 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
 
         <Card>
           <CardHeader title="Campaign Cover" />
-          <div className="mt-4 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-200 px-6 py-10 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-              <Icon.Upload className="h-5 w-5" />
-            </div>
-            <p className="text-sm font-medium text-slate-700">Drag and drop an image, or click to browse</p>
-            <p className="text-xs text-slate-400">PNG or JPG, up to 5MB</p>
-            <p className="text-xs text-slate-400">(Image upload isn't wired up yet — paste a cover image URL below in the meantime.)</p>
+          <label
+            htmlFor="cover-image-input"
+            className="mt-4 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-200 px-6 py-10 text-center hover:border-emerald-300 hover:bg-emerald-50/30"
+          >
+            {coverPreview ? (
+              <img src={coverPreview} alt="Cover preview" className="mb-2 h-32 w-full rounded-lg object-cover" />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
+                <Icon.Upload className="h-5 w-5" />
+              </div>
+            )}
+            <p className="text-sm font-medium text-slate-700">
+              {coverPreview ? 'Click to choose a different image' : 'Click to upload a cover image'}
+            </p>
+            <p className="text-xs text-slate-400">PNG, JPG, or WEBP, up to 5MB</p>
             <input
-              className={`${inputClass} mt-2`}
-              placeholder="https://example.com/cover.jpg"
-              value={form.coverImageUrl}
-              onChange={updateField('coverImageUrl')}
+              id="cover-image-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={handleCoverFileChange}
             />
-          </div>
+          </label>
         </Card>
       </div>
 
@@ -233,8 +266,8 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
           <CardHeader title="Preview" />
           <div className="mt-4">
             <div className="relative h-32 w-full overflow-hidden rounded-lg bg-gradient-to-br from-emerald-200 to-teal-300">
-              {form.coverImageUrl ? (
-                <img src={form.coverImageUrl} alt="" className="h-full w-full object-cover" />
+              {coverPreview ? (
+                <img src={coverPreview} alt="" className="h-full w-full object-cover" />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-emerald-900/40">
                   <Icon.Image className="h-8 w-8" />

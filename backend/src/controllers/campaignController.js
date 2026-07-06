@@ -48,13 +48,17 @@ export const createCampaign = async (req, res) => {
       });
     }
 
+    // When a file is uploaded (multipart/form-data via multer), it takes
+    // priority over any coverImageUrl string in the body.
+    const resolvedCoverImageUrl = req.file ? `/uploads/campaigns/${req.file.filename}` : coverImageUrl;
+
     const campaign = await Campaign.create({
       creator: req.user._id,
       title,
       description,
       category,
       goalAmount,
-      coverImageUrl,
+      coverImageUrl: resolvedCoverImageUrl,
       startDate,
       endDate,
       status: status || 'draft',
@@ -95,6 +99,11 @@ export const updateCampaign = async (req, res) => {
     fields.forEach((f) => {
       if (req.body[f] !== undefined) campaign[f] = req.body[f];
     });
+
+    // A newly uploaded file always wins over whatever coverImageUrl came in the body.
+    if (req.file) {
+      campaign.coverImageUrl = `/uploads/campaigns/${req.file.filename}`;
+    }
 
     // Resubmitting for review clears any prior admin decision/trail.
     if (req.body.status === 'pending_review') {

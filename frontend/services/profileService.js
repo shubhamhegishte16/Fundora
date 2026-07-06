@@ -60,3 +60,17 @@ export const changePassword = async (currentPassword, newPassword) => {
         throw error;
     }
 };
+
+export const uploadAvatar = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const response = await api.post('/creator/auth/avatar', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error uploading avatar:', error);
+        throw error;
+    }
+};

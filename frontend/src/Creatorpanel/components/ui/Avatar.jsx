@@ -20,11 +20,24 @@ function getInitials(name) {
 
 /**
  * Avatar
- * Initials-based circular avatar (no external image dependency).
- * Falls back to a neutral person glyph for anonymous entries.
+ * Initials-based circular avatar by default. Pass `src` to render an
+ * actual image instead (e.g. a creator's uploaded profile photo) —
+ * falls back to initials if the image fails to load.
  */
-export default function Avatar({ name, size = 'md', tint = 'emerald', className = '' }) {
+export default function Avatar({ name, src, size = 'md', tint = 'emerald', className = '' }) {
   const initials = getInitials(name);
+
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name || 'Avatar'}
+        className={`shrink-0 rounded-full object-cover ${SIZES[size].split(' ').slice(0, 2).join(' ')} ${className}`}
+        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+      />
+    );
+  }
+
   return (
     <div className={`flex shrink-0 items-center justify-center rounded-full font-semibold ${SIZES[size]} ${TINTS[tint]} ${className}`}>
       {initials || '?'}
