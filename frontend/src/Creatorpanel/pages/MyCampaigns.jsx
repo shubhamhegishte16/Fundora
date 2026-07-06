@@ -4,14 +4,16 @@ import Card from '../components/ui/Card.jsx';
 import Button from '../components/ui/Button.jsx';
 import Pill from '../components/ui/Pill.jsx';
 import ProgressBar from '../components/ui/ProgressBar.jsx';
-import { getMyCampaigns } from "../../../services/campaignService.js";
+import { getMyCampaigns, deleteCampaign } from "../../../services/campaignService.js";
 
 const STATUS_TINT = { active: 'emerald', completed: 'blue', draft: 'slate', pending_review: 'amber' };
 const STATUS_LABEL = { active: 'Active', completed: 'Completed', draft: 'Draft', pending_review: 'Pending Review' };
 const FILTERS = ['all', 'active', 'completed', 'draft', 'pending_review'];
 const DEFAULT_THEME = 'from-emerald-400 to-teal-500';
 
-function CampaignCard({ campaign, onEdit }) {
+function CampaignCard({ campaign, onEdit, onDelete, deleting }) {
+  const [confirming, setConfirming] = useState(false);
+
   return (
     <Card>
       <div className={`relative h-32 w-full overflow-hidden rounded-lg bg-gradient-to-br ${campaign.theme || DEFAULT_THEME}`}>
@@ -42,12 +44,43 @@ function CampaignCard({ campaign, onEdit }) {
         )}
       </div>
 
-      <button
-        onClick={() => onEdit(campaign._id)}
-        className="mt-3 w-full rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-      >
-        Edit Campaign
-      </button>
+      {confirming ? (
+        <div className="mt-3 space-y-2">
+          <p className="text-center text-xs font-medium text-rose-600">Delete this campaign? This can't be undone.</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirming(false)}
+              disabled={deleting}
+              className="flex-1 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onDelete(campaign._id)}
+              disabled={deleting}
+              className="flex-1 rounded-lg bg-rose-600 py-1.5 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-60"
+            >
+              {deleting ? 'Deleting…' : 'Confirm Delete'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={() => onEdit(campaign._id)}
+            className="flex-1 rounded-lg border border-slate-200 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+          >
+            Edit Campaign
+          </button>
+          <button
+            onClick={() => setConfirming(true)}
+            aria-label={`Delete ${campaign.title}`}
+            className="flex items-center justify-center rounded-lg border border-slate-200 px-2.5 text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+          >
+            <Icon.Trash className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
     </Card>
   );
 }
@@ -57,6 +90,8 @@ export default function MyCampaigns({ onNavigate }) {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -77,6 +112,19 @@ export default function MyCampaigns({ onNavigate }) {
 
   const goToEdit = (campaignId) => onNavigate?.('create', { campaignId });
   const goToCreate = () => onNavigate?.('create');
+
+  const handleDelete = async (campaignId) => {
+    setDeleteError(null);
+    setDeletingId(campaignId);
+    try {
+      await deleteCampaign(campaignId);
+      setCampaigns((prev) => prev.filter((c) => c._id !== campaignId));
+    } catch (err) {
+      setDeleteError('Could not delete this campaign. Please try again.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <>
@@ -109,9 +157,23 @@ export default function MyCampaigns({ onNavigate }) {
         </Card>
       )}
 
+      {!loading && deleteError && (
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          {deleteError}
+        </div>
+      )}
+
       {!loading && !error && (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((c) => <CampaignCard key={c._id} campaign={c} onEdit={goToEdit} />)}
+          {filtered.map((c) => (
+            <CampaignCard
+              key={c._id}
+              campaign={c}
+              onEdit={goToEdit}
+              onDelete={handleDelete}
+              deleting={deletingId === c._id}
+            />
+          ))}
         </div>
       )}
 
