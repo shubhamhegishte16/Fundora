@@ -8,7 +8,7 @@ function buildReportText(creatorName, summary) {
   const topCampaign = summary.campaignPreview?.[0];
 
   const lines = [
-    `📊 Fundora Campaign Report — ${creatorName || 'Creator'}`,
+    `📊 Elpis Campaign Report — ${creatorName || 'Creator'}`,
     `Generated ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`,
     '',
     `💰 Total Funds Raised: ${stat('funds')}`,
@@ -21,7 +21,7 @@ function buildReportText(creatorName, summary) {
     lines.push('', `Top Campaign: "${topCampaign.title}" — ${topCampaign.fundedPct}% funded`);
   }
 
-  lines.push('', 'Shared via Fundora');
+  lines.push('', 'Shared via Elpis');
   return lines.join('\n');
 }
 
@@ -46,7 +46,7 @@ export default function TopBar({ title, subtitle, onMenuClick, creatorName, crea
       const reportText = buildReportText(creatorName, data);
 
       if (navigator.share) {
-        await navigator.share({ title: 'Fundora Campaign Report', text: reportText });
+        await navigator.share({ title: 'Elpis Campaign Report', text: reportText });
       } else {
         await navigator.clipboard.writeText(reportText);
         setShareMsg('Report copied to clipboard!');

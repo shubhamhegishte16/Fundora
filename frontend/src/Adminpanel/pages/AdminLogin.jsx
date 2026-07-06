@@ -40,7 +40,7 @@ const AdminLogin = () => {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-200 p-8 lg:p-12">
         <div className="mb-8 text-center">
           <span className="text-xl font-extrabold tracking-wider bg-dark-green text-white px-4 py-1.5 rounded-full inline-block mb-6">
-            FUNDORA ADMIN
+            ELPIS ADMIN
           </span>
           <h2 className="text-2xl font-extrabold mb-2">Admin Sign In</h2>
           <p className="text-sm text-gray-500">Restricted access — authorized personnel only</p>

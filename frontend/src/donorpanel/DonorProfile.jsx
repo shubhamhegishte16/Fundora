@@ -32,7 +32,8 @@ import {
     TreeDeciduous,
     Gem,
     Cross,
-    LogOut
+    LogOut,
+    Lock
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import {
@@ -866,7 +867,7 @@ const DonorProfile = () => {
                                                 )}
                                                 <span className={`mt-1 text-[10px] font-medium ${badge.unlocked ? 'text-[#00a86b]' : 'text-gray-400'
                                                     }`}>
-                                                    {badge.unlocked ? '✓' : '🔒'}
+                                                    {badge.unlocked ? <Check size={12}/> : <Lock size={12}/>}
                                                 </span>
                                             </div>
                                         ))}

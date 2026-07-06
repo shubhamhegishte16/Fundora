@@ -17,7 +17,8 @@ import {
   Download,
   Printer,
   X,
-  CheckCircle
+  CheckCircle,
+  Cross
 } from "lucide-react";
 import { toggleSaveCampaign } from "../../services/donorCampaignService.js";
 import { processDonation, getAllDonations, getCampaignDonations, getDonationByTransactionId, getCampaignStats } from "../../services/MockDonationServices.js";
@@ -147,12 +148,12 @@ const CampaignDetail = ({ campaign, onBack, onDonationComplete }) => {
         receiveUpdates: receiveUpdates
       };
 
-      console.log('📤 Sending donation:', donationData);
+      // console.log('Sending donation:', donationData);
 
       const response = await processDonation(donationData);
 
-      console.log('📥 Full response:', response);
-      console.log('📄 Receipt data:', response.receipt);
+      // console.log('Full response:', response);
+      // console.log('Receipt data:', response.receipt);
 
       if (response.success) {
         // Update local campaign data immediately
@@ -232,7 +233,7 @@ const CampaignDetail = ({ campaign, onBack, onDonationComplete }) => {
 
       {error && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium animate-shake">
-          ❌ {error}
+          <Cross />{error}
         </div>
       )}
 
@@ -522,7 +523,7 @@ const CampaignDetail = ({ campaign, onBack, onDonationComplete }) => {
               </div>
 
               <p className="text-center text-sm font-semibold text-primary-green mb-6">
-                Payment Successful! 🎉
+                Payment Successful!
               </p>
 
               <div className="space-y-4">

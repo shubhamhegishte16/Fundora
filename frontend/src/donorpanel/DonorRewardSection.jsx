@@ -380,7 +380,7 @@ const DonorReward = () => {
                             <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-5">
                                 {pointsRemaining > 0 
                                     ? `${pointsRemaining} points remaining to unlock your next milestone`
-                                    : '🎉 All milestones unlocked!'}
+                                    : 'All milestones unlocked!'}
                             </p>
                             <div className="overflow-x-auto pb-2">
                                 <div className="grid grid-cols-8 gap-x-4 min-w-[580px] justify-items-center">
@@ -458,7 +458,7 @@ const DonorReward = () => {
                                                     <div className="flex items-center justify-between gap-2">
                                                         <h4 className="text-[14px] font-bold text-gray-900 truncate">{badge.name}</h4>
                                                         <span className="text-[9px] font-bold lowercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-[#00966B]">
-                                                            ✅ Earned
+                                                            Earned
                                                         </span>
                                                     </div>
                                                     <p className="text-[11px] text-gray-400 mt-1 leading-normal">{badge.criteria}</p>

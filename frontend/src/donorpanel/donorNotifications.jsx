@@ -98,7 +98,7 @@ const Notifications = () => {
         <div className="min-h-screen bg-[#f8fafc] flex flex-col lg:flex-row font-sans antialiased">
             {/* Mobile Header */}
             <div className="lg:hidden w-full bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-xs">
-                <span className="font-bold text-gray-900 text-lg">Fundora Panel</span>
+                <span className="font-bold text-gray-900 text-lg">Elpis Panel</span>
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
                     className="p-2 bg-gray-50 border border-gray-100 rounded-xl"
