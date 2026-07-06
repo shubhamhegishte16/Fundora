@@ -1,31 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { Search, MoreHorizontal, UserCheck, UserX, Mail, Shield, ChevronLeft, ChevronRight, Download, X, Check, RotateCcw, Loader2, AlertTriangle, Filter } from "lucide-react";
+import adminAxios from "../utils/adminAxios";
 
-// ---------------------------------------------------------------------------
-// API config — adjust these two lines to match your setup.
-// VITE_API_URL / REACT_APP_API_URL should point at your Express server,
-// e.g. http://localhost:5000. Admin token is read from localStorage —
-// change the key if your login flow stores it elsewhere.
-// ---------------------------------------------------------------------------
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
-const getToken = () => localStorage.getItem("adminToken");
-
-async function apiRequest(path, options = {}) {
-  const res = await fetch(`${API_BASE}/api/admin${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${getToken()}`,
-      ...(options.headers || {}),
-    },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${res.status})`);
-  }
-  return data;
-}
+// Extracts the backend's error message the same way the old apiRequest() did
+// (data.message from the JSON body), falling back to axios's own message.
+const errMsg = (err) => err.response?.data?.message || err.message || "Request failed";
 
 // ---------------------------------------------------------------------------
 // Mapping between backend values (lowercase, from the Mongo schema) and the
@@ -192,10 +171,10 @@ export default function ManageUsers() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiRequest("/users");
+      const { data } = await adminAxios.get("/users");
       setUsers((data.users || []).map(normalizeUser));
     } catch (err) {
-      setError(err.message);
+      setError(errMsg(err));
     } finally {
       setLoading(false);
     }
@@ -229,15 +208,12 @@ export default function ManageUsers() {
     if (!prev) return;
     markPending(id, true);
     try {
-      const data = await apiRequest(`/users/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify(backendPatch),
-      });
+      const { data } = await adminAxios.patch(`/users/${id}`, backendPatch);
       const updated = normalizeUser(data.user);
       setUsers((cur) => cur.map((u) => (u.id === id ? updated : u)));
       notify(successMessage, () => rollback(id, prev));
     } catch (err) {
-      notify(`Failed: ${err.message}`, null);
+      notify(`Failed: ${errMsg(err)}`, null);
     } finally {
       markPending(id, false);
     }
@@ -247,14 +223,15 @@ export default function ManageUsers() {
   const rollback = async (id, prevUser) => {
     markPending(id, true);
     try {
-      const data = await apiRequest(`/users/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: prevUser.rawStatus, role: prevUser.rawRole, kyc: prevUser.rawKyc }),
+      const { data } = await adminAxios.patch(`/users/${id}`, {
+        status: prevUser.rawStatus,
+        role: prevUser.rawRole,
+        kyc: prevUser.rawKyc,
       });
       setUsers((cur) => cur.map((u) => (u.id === id ? normalizeUser(data.user) : u)));
       notify(`Reverted ${prevUser.name}`, null);
     } catch (err) {
-      notify(`Undo failed: ${err.message}`, null);
+      notify(`Undo failed: ${errMsg(err)}`, null);
     } finally {
       markPending(id, false);
     }
@@ -263,11 +240,11 @@ export default function ManageUsers() {
   const removeUser = async (id, name) => {
     markPending(id, true);
     try {
-      await apiRequest(`/users/${id}`, { method: "DELETE" });
+      await adminAxios.delete(`/users/${id}`);
       setUsers((cur) => cur.filter((u) => u.id !== id));
       notify(`${name} deleted`, null); // no undo — deletion isn't reversible via this API
     } catch (err) {
-      notify(`Failed to delete: ${err.message}`, null);
+      notify(`Failed to delete: ${errMsg(err)}`, null);
     } finally {
       markPending(id, false);
     }

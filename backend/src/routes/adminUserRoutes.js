@@ -9,11 +9,11 @@ import { protectAdmin } from '../middleware/adminAuth.js';
 
 const router = express.Router();
 
-// Apply auth per-route (not router.use) so this router doesn't intercept
-// sibling paths like /api/admin/campaigns/* that also live under /api/admin.
-router.get('/users', protectAdmin, getUsers);
-router.post('/users', protectAdmin, createUser);
-router.patch('/users/:id', protectAdmin, updateUser);
-router.delete('/users/:id', protectAdmin, deleteUser);
+router.use(protectAdmin); // every route below requires a logged-in admin
+
+router.get('/users', getUsers);
+router.post('/users', createUser);
+router.patch('/users/:id', updateUser);
+router.delete('/users/:id', deleteUser);
 
 export default router;
