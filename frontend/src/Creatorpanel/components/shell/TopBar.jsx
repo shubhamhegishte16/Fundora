@@ -1,20 +1,17 @@
 import React from 'react';
 import { Icon } from '../../icons.jsx';
-
-function initials(name) {
-  if (!name) return '?';
-  return name.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase();
-}
+import Avatar from '../ui/Avatar.jsx';
 
 /**
  * TopBar
  * Greeting/title on the left, bell + profile chip + the two campaign
  * CTAs on the right. `title`/`subtitle` swap per page; the CTAs and
  * profile chip stay constant since they're global app actions.
- * `creatorName`/`creatorRole` come from the logged-in creator's real
- * profile (fetched once in CreatorPanelApp) rather than being hardcoded.
+ * `creatorName`/`creatorRole`/`creatorAvatarUrl` come from the logged-in
+ * creator's real profile (fetched once in CreatorPanelApp) rather than
+ * being hardcoded.
  */
-export default function TopBar({ title, subtitle, onMenuClick, creatorName, creatorRole }) {
+export default function TopBar({ title, subtitle, onMenuClick, creatorName, creatorRole, creatorAvatarUrl }) {
   return (
     <header className="flex flex-col gap-4 px-4 pb-2 pt-4 sm:px-6 sm:pt-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="flex items-start gap-3">
@@ -33,9 +30,7 @@ export default function TopBar({ title, subtitle, onMenuClick, creatorName, crea
             <Icon.Bell className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-700 text-sm font-semibold text-white">
-              {initials(creatorName)}
-            </div>
+            <Avatar name={creatorName} src={creatorAvatarUrl} size="lg" tint="dark" />
             <div className="hidden text-sm sm:block">
               <p className="font-semibold text-slate-900">{creatorName || 'Loading…'}</p>
               <p className="text-xs text-slate-500">{creatorRole || 'Creator'}</p>

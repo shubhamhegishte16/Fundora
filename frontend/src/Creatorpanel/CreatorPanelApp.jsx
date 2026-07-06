@@ -11,6 +11,15 @@ import Notifications from './pages/Notifications.jsx';
 import ProfileSettings from './pages/ProfileSettings.jsx';
 import { getMyProfile } from '../../services/profileService.js';
 
+// Uploaded avatars come back as relative paths like /uploads/avatars/xxx.jpg
+// (served by the backend's static /uploads mount) — resolve those against
+// the API origin; leave already-absolute URLs untouched.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+function resolveImageUrl(url) {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${API_ORIGIN}${url}`;
+}
+
 // Each entry: the page component + the title/subtitle shown in TopBar.
 // `dashboard`'s title is overridden below once the real creator name loads.
 const PAGES = {
@@ -73,9 +82,12 @@ export default function App() {
       subtitle={isCreatePage && editingCampaignId ? 'Update your campaign details' : subtitle}
       creatorName={creator?.name}
       creatorRole={creator?.role}
+      creatorAvatarUrl={resolveImageUrl(creator?.avatarUrl)}
     >
       {isCreatePage ? (
         <PageComponent campaignId={editingCampaignId} onNavigate={navigate} />
+      ) : activePage === 'settings' ? (
+        <PageComponent onNavigate={navigate} onCreatorUpdate={(updated) => setCreator((c) => ({ ...c, ...updated }))} />
       ) : (
         <PageComponent onNavigate={navigate} />
       )}

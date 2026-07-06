@@ -36,7 +36,7 @@ function Toggle({ enabled, onChange }) {
   );
 }
 
-export default function ProfileSettings() {
+export default function ProfileSettings({ onCreatorUpdate }) {
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ name: '', email: '', phone: '', location: '', bio: '' });
   const [prefs, setPrefs] = useState(null);
@@ -99,13 +99,7 @@ export default function ProfileSettings() {
       const data = await uploadAvatar(file);
       const resolvedUrl = resolveImageUrl(data.avatarUrl);
       setAvatarUrl(resolvedUrl);
-
-      // Keep the header/sidebar's stored creator info in sync so the new
-      // photo doesn't disappear until the next full login.
-      try {
-        const stored = JSON.parse(localStorage.getItem('creator')) || {};
-        localStorage.setItem('creator', JSON.stringify({ ...stored, avatarUrl: data.avatarUrl }));
-      } catch { /* localStorage 'creator' missing/corrupt — safe to skip syncing */ }
+      onCreatorUpdate?.({ avatarUrl: data.avatarUrl });
     } catch (err) {
       setAvatarUrl(resolveImageUrl(profile?.avatarUrl));
       setProfileMsg({ type: 'error', text: 'Could not upload photo. Please try again.' });
@@ -120,6 +114,7 @@ export default function ProfileSettings() {
     try {
       await updateMyProfile({ name: form.name, phone: form.phone, location: form.location, bio: form.bio });
       setProfileMsg({ type: 'success', text: 'Profile updated.' });
+      onCreatorUpdate?.({ name: form.name });
     } catch (err) {
       setProfileMsg({ type: 'error', text: 'Could not save changes. Please try again.' });
     } finally {
