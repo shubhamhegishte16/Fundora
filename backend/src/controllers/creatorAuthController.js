@@ -1,6 +1,7 @@
 import Creator from '../models/Creator.js';
 import { generateToken } from '../utils/jwt.js';
 import { notifyAdmins } from '../utils/notifyAdmins.js';
+import { uploadBufferToCloudinary } from '../utils/cloudinaryUpload.js';
 
 // ─── POST /api/creator/auth/register ──────────────────────────────────────────
 export const registerCreator = async (req, res) => {
@@ -39,9 +40,17 @@ export const registerCreator = async (req, res) => {
       phone,
     };
 
-    // Attach uploaded file name if multer was used
+    // Attach uploaded file if multer(memoryStorage) captured one — the buffer
+    // is streamed straight to Cloudinary, never touching local disk, so the
+    // stored idFileUrl is a permanent HTTPS link the admin KYC panel can open
+    // directly, regardless of which server instance handles that later request.
     if (req.file) {
-      creatorData.idFileUrl = req.file.filename;
+      const result = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: 'fundora/kyc',
+        resourceType: 'auto', // supports both image (jpg/png) and PDF documents
+      });
+      creatorData.idFileUrl = result.secure_url;
+      creatorData.idFilePublicId = result.public_id;
     }
 
     const creator = await Creator.create(creatorData);

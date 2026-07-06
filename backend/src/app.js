@@ -29,6 +29,8 @@ import adminFraudRoutes from "./routes/adminFraudRoutes.js";
 import adminNotificationRoutes from "./routes/adminNotificationRoutes.js";
 // add to imports, right after adminNotificationRoutes:
 import adminAnalyticsRoutes from "./routes/adminAnalyticsRoutes.js";
+import adminSettingsRoutes from "./routes/adminSettingsRoutes.js";
+import adminReportRoutes from "./routes/adminReportRoutes.js";
 
 // add to mounts, right after adminNotificationRoutes mount:
 
@@ -75,6 +77,8 @@ app.use("/api/admin/fraud", adminFraudRoutes);
 app.use("/api/admin/notifications", adminNotificationRoutes);
 app.use("/api/admin", adminUserRoutes);
 app.use("/api/admin/analytics", adminAnalyticsRoutes);
+app.use("/api/admin/settings", adminSettingsRoutes);
+app.use("/api/admin/reports", adminReportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

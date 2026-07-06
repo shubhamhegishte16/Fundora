@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { User, Lock, Bell, Shield, Globe, CreditCard, Save, Eye, EyeOff, Upload, Check } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { User, Lock, Bell, Shield, Globe, CreditCard, Save, Eye, EyeOff, Check, Loader2 } from "lucide-react";
+import adminAxios from "../utils/adminAxios";
 
 const tabs = [
   { id: "profile", label: "Profile", icon: User },
@@ -11,68 +12,149 @@ const tabs = [
 ];
 
 const Toggle = ({ enabled, onChange }) => (
-  <button onClick={() => onChange(!enabled)}
+  <button type="button" onClick={() => onChange(!enabled)}
     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${enabled ? "bg-[#2D6A4F]" : "bg-gray-200"}`}>
     <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${enabled ? "translate-x-6" : "translate-x-1"}`} />
   </button>
 );
 
+const Field = ({ label, value, onChange, type = "text", disabled = false }) => (
+  <div>
+    <label className="block text-xs font-semibold text-gray-600 mb-1.5">{label}</label>
+    <input value={value ?? ""} onChange={(e) => onChange(e.target.value)} type={type} disabled={disabled}
+      className={`w-full px-4 py-2.5 rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#52B788]/40 transition ${disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-[#F0F7F4]"}`} />
+  </div>
+);
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [notifSettings, setNotifSettings] = useState({
-    emailCampaign: true, emailDonation: true, emailKYC: true, emailFraud: true,
-    inAppAll: true, inAppSound: false, digestEmail: false,
-  });
-  const [platformSettings, setPlatformSettings] = useState({
-    maintenanceMode: false, newRegistrations: true, campaignCreation: true,
-    anonymousDonations: true, autoApprove: false, kycRequired: true,
-  });
 
-  const handleSave = () => {
+  // Profile (Admin doc)
+  const [profile, setProfile] = useState({ name: "", email: "", phone: "", bio: "" });
+
+  // Security (password change form — not persisted until submit)
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordMsg, setPasswordMsg] = useState({ type: "", text: "" });
+
+  // Platform settings (PlatformSettings doc)
+  const [platform, setPlatform] = useState(null);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const [profileRes, platformRes] = await Promise.all([
+        adminAxios.get("/settings/profile"),
+        adminAxios.get("/settings/platform"),
+      ]);
+      const a = profileRes.data.admin;
+      setProfile({ name: a.name || "", email: a.email || "", phone: a.phone || "", bio: a.bio || "" });
+      setPlatform(platformRes.data.settings);
+    } catch (err) {
+      console.error("Failed to load settings:", err);
+      setError(err.response?.data?.message || "Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const flashSaved = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      await adminAxios.put("/settings/profile", {
+        name: profile.name, phone: profile.phone, bio: profile.bio,
+      });
+      flashSaved();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMsg({ type: "", text: "" });
+    setSaving(true);
+    try {
+      await adminAxios.put("/settings/password", passwordForm);
+      setPasswordMsg({ type: "success", text: "Password updated successfully" });
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      setPasswordMsg({ type: "error", text: err.response?.data?.message || "Failed to update password" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const patchPlatform = (section, key, value) => {
+    setPlatform((prev) => ({ ...prev, [section]: { ...prev[section], [key]: value } }));
+  };
+
+  const handleSavePlatformSection = async (section) => {
+    setSaving(true);
+    try {
+      const body = section === "maintenanceMode"
+        ? { maintenanceMode: platform.maintenanceMode }
+        : { [section]: platform[section] };
+      const { data } = await adminAxios.put("/settings/platform", body);
+      setPlatform(data.settings);
+      flashSaved();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save settings");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-16 text-gray-400">
+          <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading settings...
+        </div>
+      );
+    }
+
     switch (activeTab) {
       case "profile":
         return (
           <div className="space-y-6">
             <h2 className="font-semibold text-gray-800 text-lg">Profile Settings</h2>
-            {/* Avatar */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5">
+            <div className="flex items-center gap-4 sm:gap-5">
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#2D6A4F] to-[#52B788] flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                AD
+                {profile.name ? profile.name.slice(0, 2).toUpperCase() : "AD"}
               </div>
               <div>
-                <button className="flex items-center gap-2 bg-[#F0F7F4] text-[#2D6A4F] px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#D8F3DC] transition-colors">
-                  <Upload className="w-4 h-4" /> Change Avatar
-                </button>
-                <p className="text-xs text-gray-400 mt-1.5">JPG, PNG or GIF. Max 2MB</p>
+                <p className="text-sm font-semibold text-gray-800">{profile.name || "Admin"}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{profile.email}</p>
               </div>
             </div>
-            {/* Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: "First Name", value: "Admin", type: "text" },
-                { label: "Last Name", value: "User", type: "text" },
-                { label: "Email Address", value: "admin@fundforward.in", type: "email" },
-                { label: "Phone Number", value: "+91 98765 43210", type: "tel" },
-              ].map((f) => (
-                <div key={f.label}>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">{f.label}</label>
-                  <input defaultValue={f.value} type={f.type}
-                    className="w-full px-4 py-2.5 bg-[#F0F7F4] rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#52B788]/40 transition" />
-                </div>
-              ))}
+              <Field label="Name" value={profile.name} onChange={(v) => setProfile({ ...profile, name: v })} />
+              <Field label="Email Address" value={profile.email} disabled />
+              <Field label="Phone Number" value={profile.phone} onChange={(v) => setProfile({ ...profile, phone: v })} />
               <div className="sm:col-span-2">
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Bio</label>
-                <textarea rows={3} defaultValue="Platform administrator for FundForward."
+                <textarea rows={3} value={profile.bio} onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
                   className="w-full px-4 py-2.5 bg-[#F0F7F4] rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#52B788]/40 transition resize-none" />
               </div>
             </div>
+            <button onClick={handleSaveProfile} disabled={saving}
+              className="flex items-center gap-2 bg-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Profile
+            </button>
           </div>
         );
 
@@ -80,157 +162,144 @@ export default function Settings() {
         return (
           <div className="space-y-6">
             <h2 className="font-semibold text-gray-800 text-lg">Security Settings</h2>
+            {passwordMsg.text && (
+              <div className={`text-sm rounded-xl px-4 py-2.5 ${passwordMsg.type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"}`}>
+                {passwordMsg.text}
+              </div>
+            )}
             <div className="space-y-4">
               {[
-                { label: "Current Password", placeholder: "Enter current password" },
-                { label: "New Password", placeholder: "Enter new password" },
-                { label: "Confirm New Password", placeholder: "Confirm new password" },
+                { key: "currentPassword", label: "Current Password", placeholder: "Enter current password" },
+                { key: "newPassword", label: "New Password", placeholder: "Enter new password" },
+                { key: "confirmPassword", label: "Confirm New Password", placeholder: "Confirm new password" },
               ].map((f) => (
-                <div key={f.label}>
+                <div key={f.key}>
                   <label className="block text-xs font-semibold text-gray-600 mb-1.5">{f.label}</label>
                   <div className="relative">
                     <input type={showPass ? "text" : "password"} placeholder={f.placeholder}
+                      value={passwordForm[f.key]}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, [f.key]: e.target.value })}
                       className="w-full px-4 py-2.5 bg-[#F0F7F4] rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#52B788]/40 pr-10 transition" />
-                    <button onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                       {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
               ))}
             </div>
-
-            <div className="bg-[#F0F7F4] rounded-2xl p-4 space-y-3">
-              <p className="text-sm font-semibold text-[#1B4332]">Two-Factor Authentication</p>
-              <p className="text-xs text-gray-500">Add an extra layer of security to your admin account.</p>
-              <button className="bg-[#2D6A4F] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#1B4332] transition-colors">
-                Enable 2FA
-              </button>
-            </div>
-
-            <div className="border border-gray-100 rounded-2xl p-4 space-y-3">
-              <p className="text-sm font-semibold text-gray-800">Active Sessions</p>
-              {[
-                { device: "Chrome on MacOS", location: "Mumbai, India", time: "Current session" },
-                { device: "Safari on iPhone", location: "Mumbai, India", time: "2 hr ago" },
-              ].map((s, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 py-2.5 border-t border-gray-50">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-700 truncate">{s.device}</p>
-                    <p className="text-xs text-gray-400 truncate">{s.location} · {s.time}</p>
-                  </div>
-                  {i !== 0 && <button className="text-xs text-red-500 hover:underline font-medium flex-shrink-0">Revoke</button>}
-                  {i === 0 && <span className="text-xs bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full font-medium flex-shrink-0">Active</span>}
-                </div>
-              ))}
-            </div>
+            <button onClick={handleChangePassword} disabled={saving || !passwordForm.currentPassword || !passwordForm.newPassword}
+              className="flex items-center gap-2 bg-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />} Update Password
+            </button>
           </div>
         );
 
-      case "notifications":
+      case "notifications": {
+        const n = platform?.notifications || {};
         return (
           <div className="space-y-6">
             <h2 className="font-semibold text-gray-800 text-lg">Notification Preferences</h2>
             <div className="space-y-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email Notifications</p>
               {[
-                { key: "emailCampaign", label: "New Campaign Submissions", desc: "Get notified when a new campaign is submitted for review" },
-                { key: "emailDonation", label: "Large Donations", desc: "Email when a donation exceeds ₹5,000" },
-                { key: "emailKYC", label: "KYC Submissions", desc: "Notify when a user submits KYC documents" },
-                { key: "emailFraud", label: "Fraud Alerts", desc: "Immediate email for critical fraud flags" },
-              ].map((n) => (
-                <div key={n.key} className="flex items-center justify-between gap-4 p-4 bg-[#F0F7F4] rounded-2xl">
+                { key: "emailOnNewCampaign", label: "New Campaign Submissions", desc: "Get notified when a new campaign is submitted for review" },
+                { key: "emailOnLargeDonation", label: "Large Donations", desc: `Email when a donation exceeds ₹${(n.largeDonationThreshold ?? 50000).toLocaleString("en-IN")}` },
+                { key: "emailOnKycSubmission", label: "KYC Submissions", desc: "Notify when a creator submits KYC documents" },
+                { key: "emailOnFraudAlert", label: "Fraud Alerts", desc: "Immediate email for critical fraud flags" },
+              ].map((f) => (
+                <div key={f.key} className="flex items-center justify-between gap-4 p-4 bg-[#F0F7F4] rounded-2xl">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{n.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
+                    <p className="text-sm font-medium text-gray-800">{f.label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
                   </div>
-                  <Toggle enabled={notifSettings[n.key]} onChange={(v) => setNotifSettings({ ...notifSettings, [n.key]: v })} />
+                  <Toggle enabled={!!n[f.key]} onChange={(v) => patchPlatform("notifications", f.key, v)} />
                 </div>
               ))}
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider pt-2">In-App</p>
-              {[
-                { key: "inAppAll", label: "All In-App Notifications", desc: "Show notifications in the notification bell" },
-                { key: "inAppSound", label: "Notification Sound", desc: "Play sound for new notifications" },
-                { key: "digestEmail", label: "Daily Digest Email", desc: "Receive a daily summary at 9:00 AM" },
-              ].map((n) => (
-                <div key={n.key} className="flex items-center justify-between gap-4 p-4 bg-[#F0F7F4] rounded-2xl">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{n.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{n.desc}</p>
-                  </div>
-                  <Toggle enabled={notifSettings[n.key]} onChange={(v) => setNotifSettings({ ...notifSettings, [n.key]: v })} />
-                </div>
-              ))}
+              <div className="max-w-xs">
+                <Field label="Large Donation Threshold (₹)" type="number" value={n.largeDonationThreshold}
+                  onChange={(v) => patchPlatform("notifications", "largeDonationThreshold", Number(v))} />
+              </div>
             </div>
+            <button onClick={() => handleSavePlatformSection("notifications")} disabled={saving}
+              className="flex items-center gap-2 bg-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Preferences
+            </button>
           </div>
         );
+      }
 
-      case "platform":
+      case "platform": {
+        const g = platform?.general || {};
+        const c = platform?.campaigns || {};
         return (
           <div className="space-y-6">
             <h2 className="font-semibold text-gray-800 text-lg">Platform Settings</h2>
-            <div className="space-y-3">
-              {[
-                { key: "maintenanceMode", label: "Maintenance Mode", desc: "Puts the platform in maintenance mode. Users cannot access the site.", danger: true },
-                { key: "newRegistrations", label: "Allow New Registrations", desc: "Enable or disable new user signups" },
-                { key: "campaignCreation", label: "Allow Campaign Creation", desc: "Let creators start new campaigns" },
-                { key: "anonymousDonations", label: "Allow Anonymous Donations", desc: "Donors can choose to donate anonymously" },
-                { key: "autoApprove", label: "Auto-Approve Campaigns", desc: "Skip manual review and approve campaigns automatically", danger: true },
-                { key: "kycRequired", label: "Require KYC for Creators", desc: "Campaign creators must complete KYC before publishing" },
-              ].map((s) => (
-                <div key={s.key} className={`flex items-center justify-between gap-4 p-4 rounded-2xl border ${s.danger ? "bg-red-50 border-red-100" : "bg-[#F0F7F4] border-transparent"}`}>
-                  <div className="min-w-0">
-                    <p className={`text-sm font-medium ${s.danger ? "text-red-800" : "text-gray-800"}`}>{s.label}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{s.desc}</p>
-                  </div>
-                  <Toggle enabled={platformSettings[s.key]} onChange={(v) => setPlatformSettings({ ...platformSettings, [s.key]: v })} />
-                </div>
-              ))}
+
+            <div className={`flex items-center justify-between gap-4 p-4 rounded-2xl border ${platform?.maintenanceMode ? "bg-red-50 border-red-100" : "bg-[#F0F7F4] border-transparent"}`}>
+              <div className="min-w-0">
+                <p className={`text-sm font-medium ${platform?.maintenanceMode ? "text-red-800" : "text-gray-800"}`}>Maintenance Mode</p>
+                <p className="text-xs text-gray-500 mt-0.5">Puts the platform in maintenance mode. Users cannot access the site.</p>
+              </div>
+              <Toggle enabled={!!platform?.maintenanceMode} onChange={(v) => setPlatform((p) => ({ ...p, maintenanceMode: v }))} />
+            </div>
+
+            <div className="flex items-center justify-between gap-4 p-4 bg-[#F0F7F4] rounded-2xl">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-800">Require Admin Approval for Campaigns</p>
+                <p className="text-xs text-gray-500 mt-0.5">Campaigns must be reviewed before going live</p>
+              </div>
+              <Toggle enabled={!!c.requireAdminApproval} onChange={(v) => patchPlatform("campaigns", "requireAdminApproval", v)} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {[
-                { label: "Platform Fee (%)", value: "5" },
-                { label: "Min Donation (₹)", value: "100" },
-                { label: "Max Campaign Duration (days)", value: "120" },
-                { label: "Min Funding Goal (₹)", value: "10000" },
-              ].map((f) => (
-                <div key={f.label}>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">{f.label}</label>
-                  <input defaultValue={f.value} type="number"
-                    className="w-full px-4 py-2.5 bg-[#F0F7F4] rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#52B788]/40 transition" />
-                </div>
-              ))}
+              <Field label="Platform Name" value={g.platformName} onChange={(v) => patchPlatform("general", "platformName", v)} />
+              <Field label="Support Email" value={g.supportEmail} onChange={(v) => patchPlatform("general", "supportEmail", v)} />
+              <Field label="Currency" value={g.currency} onChange={(v) => patchPlatform("general", "currency", v)} />
+              <Field label="Timezone" value={g.timezone} onChange={(v) => patchPlatform("general", "timezone", v)} />
+              <Field label="Max Campaign Duration (days)" type="number" value={c.maxDurationDays} onChange={(v) => patchPlatform("campaigns", "maxDurationDays", Number(v))} />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button onClick={() => handleSavePlatformSection("general")} disabled={saving}
+                className="flex items-center gap-2 bg-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-60">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save General
+              </button>
+              <button onClick={() => handleSavePlatformSection("campaigns")} disabled={saving}
+                className="flex items-center gap-2 bg-[#F0F7F4] text-[#2D6A4F] px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#D8F3DC] transition-colors disabled:opacity-60">
+                Save Campaign Rules
+              </button>
+              <button onClick={() => handleSavePlatformSection("maintenanceMode")} disabled={saving}
+                className="flex items-center gap-2 bg-red-50 text-red-700 px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-60">
+                Save Maintenance Mode
+              </button>
             </div>
           </div>
         );
+      }
 
-      case "payment":
+      case "payment": {
+        const p = platform?.payments || {};
         return (
           <div className="space-y-6">
-            <h2 className="font-semibold text-gray-800 text-lg">Payment Gateway Settings</h2>
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-              <p className="text-sm font-semibold text-amber-800">Mock Payment Mode Active</p>
-              <p className="text-xs text-amber-600 mt-0.5">This is a demo environment. No real transactions are processed.</p>
+            <h2 className="font-semibold text-gray-800 text-lg">Payment Settings</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Platform Fee (%)" type="number" value={p.platformFeePercent} onChange={(v) => patchPlatform("payments", "platformFeePercent", Number(v))} />
+              <Field label="Minimum Donation (₹)" type="number" value={p.minDonationAmount} onChange={(v) => patchPlatform("payments", "minDonationAmount", Number(v))} />
+              <Field label="Payout Schedule (days)" type="number" value={p.payoutScheduleDays} onChange={(v) => patchPlatform("payments", "payoutScheduleDays", Number(v))} />
+              <Field label="Gateway Provider" value={p.gatewayProvider} onChange={(v) => patchPlatform("payments", "gatewayProvider", v)} />
             </div>
-            {[
-              { label: "Razorpay API Key", value: "rzp_test_xxxxxxxxxx", type: "password" },
-              { label: "Razorpay Secret", value: "rzp_secret_xxxxxxxxxx", type: "password" },
-              { label: "Webhook URL", value: "https://api.fundforward.in/webhooks/payment", type: "text" },
-              { label: "Refund Handling Email", value: "payments@fundforward.in", type: "email" },
-            ].map((f) => (
-              <div key={f.label}>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">{f.label}</label>
-                <input defaultValue={f.value} type={f.type}
-                  className="w-full px-4 py-2.5 bg-[#F0F7F4] rounded-xl text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#52B788]/40 transition" />
-              </div>
-            ))}
+            <button onClick={() => handleSavePlatformSection("payments")} disabled={saving}
+              className="flex items-center gap-2 bg-[#2D6A4F] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#1B4332] transition-colors disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Payment Settings
+            </button>
           </div>
         );
+      }
 
       case "permissions":
         return (
           <div className="space-y-6">
             <h2 className="font-semibold text-gray-800 text-lg">Role Permissions</h2>
+            <p className="text-xs text-gray-400 -mt-3">Reference only — roles are fixed at the account level.</p>
             {[
               { role: "Admin", color: "bg-[#D8F3DC] text-[#2D6A4F]", perms: ["Manage Users", "Approve Campaigns", "View Analytics", "Handle Fraud", "Manage Settings", "Export Reports"] },
               { role: "Campaign Creator", color: "bg-purple-100 text-purple-700", perms: ["Create Campaigns", "Post Updates", "View Own Analytics", "KYC Verification"] },
@@ -259,13 +328,21 @@ export default function Settings() {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold text-[#1B4332]">Settings</h1>
-        <p className="text-gray-500 text-sm mt-0.5">Manage platform configuration and admin preferences</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1B4332]">Settings</h1>
+          <p className="text-gray-500 text-sm mt-0.5">Manage platform configuration and admin preferences</p>
+        </div>
+        {saved && (
+          <span className="flex items-center gap-1.5 text-sm text-green-700 bg-green-50 px-3 py-1.5 rounded-xl">
+            <Check className="w-4 h-4" /> Saved!
+          </span>
+        )}
       </div>
 
+      {error && <div className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2.5">{error}</div>}
+
       <div className="flex flex-col md:flex-row gap-4 md:gap-5">
-        {/* Tabs — horizontal scroll strip on mobile, vertical list from md up */}
         <div className="md:w-48 md:flex-shrink-0">
           <div className="flex md:flex-col gap-1.5 md:gap-1 overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0 pb-1 md:pb-0 scrollbar-hide">
             {tabs.map((t) => (
@@ -278,18 +355,8 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0 bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
           {renderContent()}
-
-          <div className="mt-8 pt-5 border-t border-gray-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <button className="text-sm text-gray-500 hover:text-gray-700">Reset to defaults</button>
-            <button onClick={handleSave}
-              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all
-                ${saved ? "bg-green-500 text-white" : "bg-[#2D6A4F] text-white hover:bg-[#1B4332]"}`}>
-              {saved ? <><Check className="w-4 h-4" /> Saved!</> : <><Save className="w-4 h-4" /> Save Changes</>}
-            </button>
-          </div>
         </div>
       </div>
     </div>
