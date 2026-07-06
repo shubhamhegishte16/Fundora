@@ -25,6 +25,7 @@ const EMPTY_FORM = {
   description: '',
   goalAmount: '',
   durationDays: '',
+  coverImageUrl: '',
 };
 
 // campaignId is passed in when editing an existing campaign (see CreatorPanelApp.jsx).
@@ -62,6 +63,7 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
             durationDays: c.endDate
               ? String(Math.max(0, Math.ceil((new Date(c.endDate) - new Date(c.startDate || c.createdAt)) / (1000 * 60 * 60 * 24))))
               : '',
+            coverImageUrl: c.coverImageUrl && c.coverImageUrl.startsWith('http') ? c.coverImageUrl : '',
           });
           setCoverPreview(resolveImageUrl(c.coverImageUrl));
         }
@@ -85,6 +87,18 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
     }
     setCoverImageFile(file);
     setCoverPreview(URL.createObjectURL(file));
+    setForm((f) => ({ ...f, coverImageUrl: '' })); // uploaded file takes priority over a pasted URL
+  };
+
+  const handleCoverUrlChange = (e) => {
+    const url = e.target.value;
+    setForm((f) => ({ ...f, coverImageUrl: url }));
+    if (url) {
+      setCoverImageFile(null);
+      setCoverPreview(url);
+    } else if (!coverImageFile) {
+      setCoverPreview('');
+    }
   };
 
   const buildPayload = (status) => {
@@ -98,6 +112,8 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
 
     if (coverImageFile) {
       payload.coverImageFile = coverImageFile;
+    } else if (form.coverImageUrl.trim()) {
+      payload.coverImageUrl = form.coverImageUrl.trim();
     }
 
     if (status === 'pending_review') {
@@ -258,6 +274,20 @@ export default function CreateCampaign({ campaignId, onNavigate }) {
               onChange={handleCoverFileChange}
             />
           </label>
+          <div className="mt-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-medium text-slate-400">OR</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="mt-4">
+            <label className={labelClass}>Cover Image URL</label>
+            <input
+              className={inputClass}
+              placeholder="https://example.com/image.jpg"
+              value={form.coverImageUrl}
+              onChange={handleCoverUrlChange}
+            />
+          </div>
         </Card>
       </div>
 
