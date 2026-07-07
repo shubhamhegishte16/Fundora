@@ -34,7 +34,7 @@ export default function FollowingCreators() {
       setLoading(true);
       setError(null);
       const response = await getMyFollowers();
-      
+
       // Extract followers from response
       let followersList = [];
       if (response?.followers) {
@@ -42,13 +42,13 @@ export default function FollowingCreators() {
       } else if (response?.data?.followers) {
         followersList = response.data.followers;
       }
-      
+
       setFollowers(followersList);
-      
+
       // Calculate stats
       const totalDonations = followersList.reduce((sum, f) => sum + (f.totalDonated || f.totalDonations || 0), 0);
-      const avgDonation = followersList.length > 0 ? totalDonations / followersList.length : 0;
-      
+      const avgDonation = followersList.length > 0 && totalDonations > 0 ? totalDonations / followersList.length : 0;
+
       setStats({
         totalFollowers: followersList.length,
         totalDonations: totalDonations,
@@ -82,7 +82,7 @@ export default function FollowingCreators() {
           <Users className="h-8 w-8 text-red-400" />
         </div>
         <p className="mt-4 text-sm font-medium text-red-600">{error}</p>
-        <button 
+        <button
           onClick={fetchFollowers}
           className="mt-3 text-sm text-[#00a86b] hover:text-[#00965e] font-medium flex items-center gap-1 mx-auto"
         >
@@ -100,7 +100,7 @@ export default function FollowingCreators() {
         </div>
         <p className="mt-4 text-sm font-medium text-gray-700">No followers yet</p>
         <p className="text-xs text-gray-500 max-w-sm mx-auto">
-          They'll show up here once donors start following you. 
+          They'll show up here once donors start following you.
           Share your campaigns to grow your following!
         </p>
       </div>
@@ -153,25 +153,25 @@ export default function FollowingCreators() {
           {followers.map((follower, index) => {
             // Get name from various possible fields
             const displayName = follower.name || follower.firstName || 'Anonymous Donor';
-            const fullName = follower.firstName && follower.lastName 
-              ? `${follower.firstName} ${follower.lastName}` 
+            const fullName = follower.firstName && follower.lastName
+              ? `${follower.firstName} ${follower.lastName}`
               : displayName;
-            
+
             // Get donation stats
             const totalDonated = follower.totalDonated || follower.totalDonations || 0;
             const donationCount = follower.donationCount || follower.donations || 0;
-            
+
             return (
-              <div 
-                key={follower.id || follower._id || index} 
+              <div
+                key={follower.id || follower._id || index}
                 className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 <div className="flex items-center gap-3">
-                  <Avatar 
-                    name={fullName} 
-                    size="xl" 
-                    tint="dark" 
-                    src={follower.avatar || follower.profileImage || follower.avatarUrl} 
+                  <Avatar
+                    name={fullName}
+                    size="xl"
+                    tint="dark"
+                    src={follower.avatar || follower.profileImage || follower.avatarUrl}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-gray-900" title={fullName}>

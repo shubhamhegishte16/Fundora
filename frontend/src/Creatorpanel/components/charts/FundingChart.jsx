@@ -8,7 +8,8 @@ import React from 'react';
  */
 export default function FundingChart({ points, labels }) {
   const W = 600, H = 220, PAD = 24;
-  const max = Math.max(...points) * 1.15;
+  const maxVal = Math.max(...points);
+  const max = maxVal > 0 ? maxVal * 1.15 : 100;
   const stepX = (W - PAD * 2) / (points.length - 1);
 
   const coords = points.map((v, i) => {

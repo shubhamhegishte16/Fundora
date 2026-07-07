@@ -19,7 +19,7 @@ export const getMyFollowers = async (req, res) => {
     // console.log(`Found ${follows.length} follows`);
 
     const followers = [];
-    
+
     for (const follow of follows) {
       if (!follow.donor) {
         console.log('No donor found for follow:', follow._id);
@@ -29,29 +29,25 @@ export const getMyFollowers = async (req, res) => {
       const donor = follow.donor;
       // console.log(`Processing donor: ${donor.name} (${donor.email})`);
 
-      // METHOD 1: Find donations by donor email
-      let donations = await Donation.find({});
+      // Resolve the actual Donor record using the User's email
+      const donorDoc = await Donor.findOne({ email: donor.email.toLowerCase() });
       
-      // Filter donations where donor email matches
-      const matchedDonations = donations.filter(d => {
-        // If donation has donor populated, check email
-        if (d.donor && d.donor.email) {
-          return d.donor.email === donor.email;
-        }
-        // If donation has donor ID, find the donor and check email
-        if (d.donor) {
-          // We need to check if this donor ID matches our donor
-          return d.donor.toString() === donor._id.toString();
-        }
-        return false;
-      });
+      let matchedDonations = [];
+      if (donorDoc) {
+        // Fetch completed donations specifically for this donor and creator
+        matchedDonations = await Donation.find({
+          donor: donorDoc._id,
+          creator: creatorId,
+          status: 'completed'
+        });
+      }
 
       console.log(`Found ${matchedDonations.length} donations for donor ${donor.name}`);
 
       // Calculate totals
       let totalDonated = 0;
       let donationCount = matchedDonations.length;
-      
+
       for (const donation of matchedDonations) {
         totalDonated += (donation.amount || 0);
       }
@@ -67,13 +63,13 @@ export const getMyFollowers = async (req, res) => {
         donationCount: donationCount,
         followedAt: follow.createdAt,
       };
-      
+
       // console.log(`${followerData.name}: ${donationCount} donations, ₹${totalDonated}`);
       followers.push(followerData);
     }
 
     // console.log(`Returning ${followers.length} followers`);
-    
+
     res.status(200).json({
       success: true,
       followers: followers,
