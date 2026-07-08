@@ -16,6 +16,43 @@ export const getPendingCampaigns = async (req, res) => {
   }
 };
 
+// ─── GET /api/admin/campaigns ───────────────────────────────────────────────
+// Every campaign regardless of status, for the full "Manage Campaigns" view.
+export const getAllCampaigns = async (req, res) => {
+  try {
+    const campaigns = await Campaign.find({})
+      .populate('creator', 'name email')
+      .sort({ createdAt: -1 }); // newest first
+    res.json({ success: true, campaigns });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─── DELETE /api/admin/campaigns/:id ────────────────────────────────────────
+// Admin can remove any campaign regardless of status (active, draft, etc).
+export const deleteCampaignAdmin = async (req, res) => {
+  try {
+    const campaign = await Campaign.findByIdAndDelete(req.params.id);
+    if (!campaign) {
+      return res.status(404).json({ success: false, message: 'Campaign not found' });
+    }
+
+    await Notification.create({
+      creator: campaign.creator,
+      type: 'milestone',
+      title: 'Campaign removed',
+      detail: `Your campaign "${campaign.title}" was removed by an administrator.`,
+      relatedCampaign: campaign._id,
+    });
+
+    res.json({ success: true, message: 'Campaign deleted' });
+  } catch (error) {
+    console.error('deleteCampaignAdmin error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // ─── PATCH /api/admin/campaigns/:id/approve ────────────────────────────────
 // pending_review -> active. Sets the live window and stamps the review trail.
 export const approveCampaign = async (req, res) => {
