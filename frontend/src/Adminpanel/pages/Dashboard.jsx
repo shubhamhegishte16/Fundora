@@ -51,15 +51,28 @@ export default function Dashboard() {
       setLoading(true);
       setError("");
       try {
-        const [statsRes, trendRes, catRes, campRes, donRes] = await Promise.all([
+        const [statsRes, trendRes, catRes, campRes, donRes, usersRes] = await Promise.all([
           adminAxios.get("/dashboard/stats"),
           adminAxios.get("/dashboard/donation-trend?months=6"),
           adminAxios.get("/dashboard/category-breakdown"),
           adminAxios.get("/dashboard/recent-campaigns?limit=4"),
           adminAxios.get("/dashboard/recent-donations?limit=3"),
+          adminAxios.get("/users"), // same endpoint Manageusers.jsx uses — keeps this count in sync with that page
         ]);
         if (cancelled) return;
-        setStats(statsRes.data.stats);
+
+        // Total Users comes straight from the Manage Users list (not the separate stats
+        // aggregation) so the dashboard number always matches what's shown on that page.
+        const userList = usersRes.data.users || [];
+        const mergedStats = {
+          ...statsRes.data.stats,
+          totalUsers: {
+            ...statsRes.data.stats.totalUsers,
+            value: userList.length,
+          },
+        };
+
+        setStats(mergedStats);
         setAreaData(trendRes.data.trend || []);
         setCategoryData(catRes.data.breakdown || []);
         setRecentCampaigns(campRes.data.campaigns || []);
