@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, Clock, Megaphone, Trash2 } from "lucide-react";
+import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, Clock, Megaphone, Trash2, X, ImageOff, Calendar, Target, Users, Mail } from "lucide-react";
 import adminAxios from "../utils/adminAxios";
+
+// Uploaded cover images come back as relative paths like /uploads/campaigns/xxx.jpg
+// (served by the backend's static /uploads mount) — resolve those against the
+// API origin; leave already-absolute URLs (e.g. Cloudinary) untouched.
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "");
+function resolveImageUrl(url) {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `${API_ORIGIN}${url}`;
+}
 
 const categoryColors = {
   Education: "bg-blue-50 text-blue-600",
@@ -98,6 +107,134 @@ function DeleteModal({ campaign, onClose, onConfirm, submitting }) {
   );
 }
 
+// ViewModal shows the full campaign — cover image, description, funding progress,
+// and creator info — pulled straight from the same record backing the card.
+function ViewModal({ campaign, onClose }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const goal = campaign.goalAmount || 0;
+  const raised = campaign.raisedAmount || 0;
+  const pct = goal ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+  const imgSrc = resolveImageUrl(campaign.coverImageUrl);
+  const creatorName = campaign.creator?.name || "Unknown creator";
+  const creatorEmail = campaign.creator?.email || "—";
+
+  const formatDate = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "—");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div
+        className="w-full max-w-lg bg-white rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Cover image */}
+        <div className="relative h-48 w-full bg-gray-100 flex-shrink-0">
+          {imgSrc && !imgFailed ? (
+            <img
+              src={imgSrc}
+              alt={campaign.title}
+              className="h-full w-full object-cover"
+              onError={() => setImgFailed(true)}
+            />
+          ) : (
+            <div className="h-full w-full flex flex-col items-center justify-center text-gray-300">
+              <ImageOff className="w-8 h-8 mb-1" />
+              <span className="text-[12px]">No cover image</span>
+            </div>
+          )}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <span className={`absolute top-3 left-3 text-[11px] font-medium px-2.5 py-1 rounded-full ${statusColors[campaign.status]}`}>
+            {statusLabels[campaign.status]}
+          </span>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 overflow-y-auto">
+          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${categoryColors[campaign.category] || "bg-gray-50 text-gray-500"}`}>
+            {campaign.category}
+          </span>
+          <h2 className="font-bold text-gray-800 text-lg mt-2 leading-snug">{campaign.title}</h2>
+
+          <p className="text-[13px] text-gray-500 mt-2 leading-relaxed whitespace-pre-line">
+            {campaign.description || "No description provided."}
+          </p>
+
+          {campaign.status === "draft" && campaign.rejectionReason && (
+            <div className="mt-3 rounded-xl border border-red-100 bg-red-50 px-3.5 py-2.5">
+              <p className="text-[11px] font-semibold text-red-600 mb-0.5">Rejection reason</p>
+              <p className="text-[12px] text-red-500">{campaign.rejectionReason}</p>
+            </div>
+          )}
+
+          {/* Funding progress */}
+          <div className="mt-4">
+            <div className="flex justify-between text-[13px] mb-1.5">
+              <span className="font-semibold text-[#2D6A4F]">₹{raised.toLocaleString("en-IN")} raised</span>
+              <span className="text-gray-400">{pct}%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${pct >= 70 ? "bg-[#52B788]" : pct >= 40 ? "bg-amber-400" : "bg-gray-300"}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">of ₹{goal.toLocaleString("en-IN")} goal</p>
+          </div>
+
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3.5 py-2.5">
+              <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="text-[13px] font-semibold text-gray-700">{campaign.donorCount || 0}</p>
+                <p className="text-[11px] text-gray-400">Donors</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3.5 py-2.5">
+              <Target className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="text-[13px] font-semibold text-gray-700">₹{goal.toLocaleString("en-IN")}</p>
+                <p className="text-[11px] text-gray-400">Goal</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3.5 py-2.5">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="text-[13px] font-semibold text-gray-700">{formatDate(campaign.startDate)}</p>
+                <p className="text-[11px] text-gray-400">Start date</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3.5 py-2.5">
+              <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <div>
+                <p className="text-[13px] font-semibold text-gray-700">{formatDate(campaign.endDate)}</p>
+                <p className="text-[11px] text-gray-400">End date</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Creator */}
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#2D6A4F] to-[#52B788] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              {creatorName.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-gray-700 truncate">{creatorName}</p>
+              <p className="text-[11px] text-gray-400 flex items-center gap-1 truncate">
+                <Mail className="w-3 h-3 flex-shrink-0" /> {creatorEmail}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ManageCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,6 +244,7 @@ export default function ManageCampaigns() {
   const [actionMenu, setActionMenu] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null); // campaign being rejected
   const [deleteTarget, setDeleteTarget] = useState(null); // campaign being deleted
+  const [viewTarget, setViewTarget] = useState(null); // campaign being viewed in detail
   const [actioningId, setActioningId] = useState(null); // campaign currently being approved/rejected/deleted
 
   const fetchCampaigns = useCallback(async () => {
@@ -240,6 +378,7 @@ export default function ManageCampaigns() {
             const pct = goal ? Math.round((raised / goal) * 100) : 0;
             const creatorName = c.creator?.name || "Unknown creator";
             const isBusy = actioningId === c._id;
+            const thumbSrc = resolveImageUrl(c.coverImageUrl);
 
             return (
               <div
@@ -255,6 +394,30 @@ export default function ManageCampaigns() {
                       : "bg-gray-200"
                   }`}
                 />
+
+                {/* Cover image */}
+                <button
+                  onClick={() => setViewTarget(c)}
+                  className="block h-32 w-full bg-gray-100 overflow-hidden group relative"
+                >
+                  {thumbSrc ? (
+                    <img
+                      src={thumbSrc}
+                      alt={c.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextSibling.style.display = "flex"; }}
+                    />
+                  ) : null}
+                  <div className={`h-full w-full ${thumbSrc ? "hidden" : "flex"} flex-col items-center justify-center text-gray-300`}>
+                    <ImageOff className="w-6 h-6 mb-1" />
+                    <span className="text-[11px]">No image</span>
+                  </div>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-[12px] font-medium flex items-center gap-1.5">
+                      <Eye className="w-3.5 h-3.5" /> View details
+                    </span>
+                  </div>
+                </button>
 
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-3">
@@ -274,7 +437,10 @@ export default function ManageCampaigns() {
                       {actionMenu === c._id && (
                         <div className="absolute right-0 top-7 z-20 w-36 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden">
                           <button
-                            onClick={() => setActionMenu(null)}
+                            onClick={() => {
+                              setViewTarget(c);
+                              setActionMenu(null);
+                            }}
                             className="w-full flex items-center gap-2 px-3.5 py-2 text-[13px] text-gray-600 hover:bg-gray-50 transition-colors"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -378,6 +544,10 @@ export default function ManageCampaigns() {
             );
           })}
         </div>
+      )}
+
+      {viewTarget && (
+        <ViewModal campaign={viewTarget} onClose={() => setViewTarget(null)} />
       )}
 
       {rejectTarget && (
