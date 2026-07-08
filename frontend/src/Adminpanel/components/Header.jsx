@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Search, ChevronDown, Menu, X, User, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Bell, ChevronDown, Menu, X, User, Settings as SettingsIcon, LogOut } from "lucide-react";
 
 const notifications = [
   { id: 1, text: "New campaign pending approval", time: "2 min ago", unread: true },
@@ -11,7 +11,6 @@ const notifications = [
 export default function Header({ sidebarOpen, setSidebarOpen }) {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   const notifRef = useRef(null);
@@ -39,7 +38,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
       if (e.key === "Escape") {
         setNotifOpen(false);
         setProfileOpen(false);
-        setMobileSearchOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -61,26 +59,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
         </button>
       )}
 
-      {/* Search — full input on sm+, collapses to an icon-trigger on mobile */}
-      <div className="relative flex-1 max-w-sm hidden sm:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-        <input
-          type="text"
-          placeholder="Search anything..."
-          className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[13px] text-gray-700 placeholder-gray-300 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-200 transition"
-        />
-      </div>
-
-      <div className="flex-1 sm:hidden" />
-
-      <button
-        onClick={() => setMobileSearchOpen((v) => !v)}
-        className="sm:hidden w-9 h-9 rounded-xl flex items-center justify-center text-gray-400 hover:bg-gray-50 hover:text-[#2D6A4F] transition-all flex-shrink-0"
-      >
-        <Search className="w-[18px] h-[18px]" />
-      </button>
-
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1.5 sm:gap-2 ml-auto">
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>
           <button
@@ -178,21 +157,6 @@ export default function Header({ sidebarOpen, setSidebarOpen }) {
           )}
         </div>
       </div>
-
-      {/* Mobile search bar — slides in below the header */}
-      {mobileSearchOpen && (
-        <div className="absolute left-0 right-0 top-full sm:hidden bg-white border-b border-gray-100 p-3 shadow-md z-30">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-            <input
-              type="text"
-              autoFocus
-              placeholder="Search anything..."
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-[13px] text-gray-700 placeholder-gray-300 outline-none focus:ring-2 focus:ring-green-100 focus:border-green-200 transition"
-            />
-          </div>
-        </div>
-      )}
     </header>
   );
 }
