@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, Clock, Megaphone } from "lucide-react";
+import { Search, CheckCircle, XCircle, Eye, MoreHorizontal, Clock, Megaphone, Trash2 } from "lucide-react";
 import adminAxios from "../utils/adminAxios";
 
 const categoryColors = {
@@ -68,6 +68,36 @@ function RejectModal({ campaign, onClose, onConfirm, submitting }) {
   );
 }
 
+// DeleteModal confirms permanent removal before calling the delete endpoint.
+function DeleteModal({ campaign, onClose, onConfirm, submitting }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4">
+      <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl p-5">
+        <h3 className="font-semibold text-gray-800 text-[15px]">Delete "{campaign.title}"?</h3>
+        <p className="text-[12px] text-gray-400 mt-1 mb-4">
+          This permanently removes the campaign, regardless of its current status. This action cannot be undone.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-xl text-[13px] font-semibold text-gray-500 bg-gray-50 hover:bg-gray-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={submitting}
+            className="flex-1 py-2 rounded-xl text-[13px] font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50 transition-colors"
+          >
+            {submitting ? "Deleting…" : "Delete Permanently"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ManageCampaigns() {
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,13 +106,14 @@ export default function ManageCampaigns() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [actionMenu, setActionMenu] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null); // campaign being rejected
-  const [actioningId, setActioningId] = useState(null); // campaign currently being approved/rejected
+  const [deleteTarget, setDeleteTarget] = useState(null); // campaign being deleted
+  const [actioningId, setActioningId] = useState(null); // campaign currently being approved/rejected/deleted
 
-  const fetchPending = useCallback(async () => {
+  const fetchCampaigns = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const { data } = await adminAxios.get("/campaigns/pending");
+      const { data } = await adminAxios.get("/campaigns");
       setCampaigns(data.campaigns || []);
     } catch (err) {
       setError("Could not load campaigns. Please try again.");
@@ -92,8 +123,8 @@ export default function ManageCampaigns() {
   }, []);
 
   useEffect(() => {
-    fetchPending();
-  }, [fetchPending]);
+    fetchCampaigns();
+  }, [fetchCampaigns]);
 
   const handleApprove = async (campaign) => {
     setActioningId(campaign._id);
@@ -123,6 +154,21 @@ export default function ManageCampaigns() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setActioningId(deleteTarget._id);
+    try {
+      await adminAxios.delete(`/campaigns/${deleteTarget._id}`);
+      setCampaigns((prev) => prev.filter((c) => c._id !== deleteTarget._id));
+      setDeleteTarget(null);
+    } catch (err) {
+      setError("Could not delete this campaign. Please try again.");
+    } finally {
+      setActioningId(null);
+      setActionMenu(null);
+    }
+  };
+
   const filtered = campaigns.filter((c) => {
     const creatorName = c.creator?.name || "";
     const matchSearch =
@@ -138,7 +184,7 @@ export default function ManageCampaigns() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-800">Campaigns</h1>
-          <p className="text-gray-400 text-sm mt-0.5">{campaigns.length} campaign{campaigns.length === 1 ? "" : "s"} awaiting review</p>
+          <p className="text-gray-400 text-sm mt-0.5">{campaigns.length} campaign{campaigns.length === 1 ? "" : "s"} total</p>
         </div>
         {pending > 0 && (
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 text-amber-700 px-4 py-2 rounded-xl text-sm">
@@ -257,6 +303,17 @@ export default function ManageCampaigns() {
                               </button>
                             </>
                           )}
+                          <button
+                            onClick={() => {
+                              setDeleteTarget(c);
+                              setActionMenu(null);
+                            }}
+                            disabled={isBusy}
+                            className="w-full flex items-center gap-2 px-3.5 py-2 text-[13px] text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 border-t border-gray-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </button>
                         </div>
                       )}
                     </div>
@@ -304,6 +361,18 @@ export default function ManageCampaigns() {
                       </button>
                     </div>
                   )}
+
+                  {c.status !== "pending_review" && (
+                    <div className="flex gap-2 mt-4 pt-3 border-t border-gray-50">
+                      <button
+                        onClick={() => setDeleteTarget(c)}
+                        disabled={isBusy}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-red-50 text-red-600 py-2 rounded-xl text-[12px] font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> {isBusy ? "Deleting…" : "Delete"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -317,6 +386,15 @@ export default function ManageCampaigns() {
           submitting={actioningId === rejectTarget._id}
           onClose={() => setRejectTarget(null)}
           onConfirm={handleReject}
+        />
+      )}
+
+      {deleteTarget && (
+        <DeleteModal
+          campaign={deleteTarget}
+          submitting={actioningId === deleteTarget._id}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
         />
       )}
     </div>
